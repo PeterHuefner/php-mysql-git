@@ -1,0 +1,37 @@
+<?php
+
+
+namespace PhpMySqlGit;
+
+
+class Database {
+	use Configuration;
+
+	public function configure() {
+		if (!empty($this->dbStructure["databases"][$this->database])) {
+			foreach ($this->dbStructure["databases"][$this->database] as $config => $value) {
+				if ($config === "tables") {
+					continue;
+				} elseif(isset($this->fileStructure["databases"])
+					&& array_key_exists($config, $this->fileStructure["databases"][$this->database])
+					&& strtolower($value) !== strtolower($this->fileStructure["databases"][$this->database][$config])
+				) {
+					$this->statements[] = $this->getDb()->alter();
+					break;
+				}
+			}
+
+		} else {
+			$this->statements[] = $this->getDb()->create();
+		}
+	}
+
+	protected function getDb() {
+		$db            = new \PhpMySqlGit\SQL\Database();
+		$db->name      = PhpMySqlGit::$instance->getDbname();
+		$db->charset   = PhpMySqlGit::$instance->getCharset();
+		$db->collation = PhpMySqlGit::$instance->getCollation();
+
+		return $db;
+	}
+}
