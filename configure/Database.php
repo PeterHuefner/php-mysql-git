@@ -8,6 +8,20 @@ class Database {
 	use Configuration;
 
 	public function configure() {
+		$this->configureDatabase();
+
+		$tables = new Tables($this->dbStructure, $this->fileStructure);
+		$tables->configure();
+		$this->statements = array_merge($this->statements, $tables->getStatements());
+		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $tables->getCommentedOutStatements());
+
+		$columns = new Columns($this->dbStructure, $this->fileStructure);
+		$columns->configure();
+		$this->statements = array_merge($this->statements, $columns->getStatements());
+		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $columns->getCommentedOutStatements());
+	}
+
+	protected function configureDatabase() {
 		if (!empty($this->dbStructure["databases"][$this->database])) {
 			foreach ($this->dbStructure["databases"][$this->database] as $config => $value) {
 				if ($config === "tables") {

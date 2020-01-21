@@ -98,6 +98,12 @@ class PhpMySqlGit {
 
 	protected $dirMod = "0775";
 
+	protected $overwriteCharset;
+
+	protected $overwriteEngine;
+
+	protected $overwriteRowFormat;
+
 	/**
 	 * @return string
 	 */
@@ -210,6 +216,48 @@ class PhpMySqlGit {
 		return $this->dirMod;
 	}
 
+	/**
+	 * @param mixed $overwriteCharset
+	 */
+	public function setOverwriteCharset($overwriteCharset): void {
+		$this->overwriteCharset = $overwriteCharset;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getOverwriteCharset() {
+		return $this->overwriteCharset;
+	}
+
+	/**
+	 * @param mixed $overwriteEngine
+	 */
+	public function setOverwriteEngine($overwriteEngine): void {
+		$this->overwriteEngine = $overwriteEngine;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getOverwriteEngine() {
+		return $this->overwriteEngine;
+	}
+
+	/**
+	 * @param mixed $overwriteRowFormat
+	 */
+	public function setOverwriteRowFormat($overwriteRowFormat): void {
+		$this->overwriteRowFormat = $overwriteRowFormat;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getOverwriteRowFormat() {
+		return $this->overwriteRowFormat;
+	}
+
 	#endregion
 
 	function __construct($dbConnection) {
@@ -240,9 +288,9 @@ class PhpMySqlGit {
 			$fileStructure = $structureSource;
 		}
 
-		echo("file structure\n");
+		/*echo("file structure\n");
 		var_dump($fileStructure);
-		echo("\n\n");
+		echo("\n\n");*/
 
 		$statements = [];
 
@@ -251,7 +299,8 @@ class PhpMySqlGit {
 		$statements = array_merge($statements, $database->getStatements());
 
 		var_dump($statements);
-		var_dump($this->dbStructure);
+		var_dump($database->getCommentedOutStatements());
+		//var_dump($this->dbStructure);
 	}
 
 	public function saveStructure($saveToDir = null, $tables = []) {
@@ -267,5 +316,9 @@ class PhpMySqlGit {
 
 	public function saveData($table = null, $saveToFile = null) {
 
+	}
+
+	public function escape($string) {
+		return $this->database->escape($string);
 	}
 }

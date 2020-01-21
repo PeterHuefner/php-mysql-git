@@ -16,6 +16,16 @@ class SqlConnection {
 		$this->database = $datbase;
 	}
 
+	public function escape($string) {
+		$string = $this->pdo->quote($string);
+
+		if ($string === '') {
+			$string = "''";
+		}
+
+		return $string;
+	}
+
 	public function readDbStructure() {
 		$this->getDatabase();
 
@@ -70,9 +80,10 @@ class SqlConnection {
 		$sql = "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE';";
 		foreach ($this->pdo->query($sql) as $table) {
 			$this->structure["databases"][$this->database]["tables"][$table["TABLE_NAME"]] = [
-				"engine"     => $table["ENGINE"],
-				"row_format" => $table["ROW_FORMAT"],
-				"collation"  => $table["TABLE_COLLATION"]
+				"engine"     => PhpMySqlGit::$instance->getOverwriteEngine() ? PhpMySqlGit::$instance->getEngine() : $table["ENGINE"],
+				"row_format" => PhpMySqlGit::$instance->getOverwriteRowFormat() ? PhpMySqlGit::$instance->getRowFormat() : $table["ROW_FORMAT"],
+				"collation"  => PhpMySqlGit::$instance->getOverwriteCharset() ? PhpMySqlGit::$instance->getCollation() : $table["TABLE_COLLATION"],
+				"comment"    => $table["TABLE_COMMENT"] ?? '',
 			];
 		}
 	}
@@ -83,15 +94,16 @@ class SqlConnection {
 			foreach ($this->pdo->query($sql) as $column) {
 				$columnDefinition = [
 					"name"           => $column["COLUMN_NAME"],
-					"default"        => $column["COLUMN_DEFAULT"],
+					"default"        => $this->getColumnDefault($column["COLUMN_DEFAULT"]),
 					"nullable"       => $column["IS_NULLABLE"] == "NO" ? false : true,
 					"type"           => $column["DATA_TYPE"],
 					"column_type"    => $column["COLUMN_TYPE"],
 					"length"         => ($column["CHARACTER_MAXIMUM_LENGTH"] ?? $column["NUMERIC_PRECISION"].($column["NUMERIC_SCALE"] != 0 ? ",".$column["NUMERIC_SCALE"] : "")),
-					"character_set"  => $column["CHARACTER_SET_NAME"],
-					"collation"      => $column["COLLATION_NAME"],
+					"character_set"  => $column["CHARACTER_SET_NAME"] && PhpMySqlGit::$instance->getOverwriteCharset() ? PhpMySqlGit::$instance->getCharset() : $column["CHARACTER_SET_NAME"],
+					"collation"      => $column["COLLATION_NAME"] && PhpMySqlGit::$instance->getOverwriteCharset() ? PhpMySqlGit::$instance->getCollation() : $column["COLLATION_NAME"],
 					"auto_increment" => $column["EXTRA"] === "auto_increment",
 					"comment"        => $column["COLUMN_COMMENT"],
+					"on_update"      => stripos($column["EXTRA"], "on update") !== false,
 				];
 
 				$structure['columns'][] = $columnDefinition;
@@ -139,5 +151,13 @@ class SqlConnection {
 
 			}
 		}
+	}
+
+	protected function getColumnDefault($default) {
+		if ($default === "current_timestamp()") {
+			$default = "CURRENT_TIMESTAMP";
+		}
+
+		return $default;
 	}
 }

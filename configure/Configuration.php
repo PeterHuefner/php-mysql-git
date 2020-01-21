@@ -10,6 +10,7 @@ trait Configuration {
 	protected $dbStructure = [];
 
 	protected $statements = [];
+	protected $commentedOutStatements = [];
 
 	protected $database;
 
@@ -24,6 +25,13 @@ trait Configuration {
 	 */
 	public function getStatements(): array {
 		return $this->statements;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getCommentedOutStatements(): array {
+		return $this->commentedOutStatements;
 	}
 
 	public function configure() {
