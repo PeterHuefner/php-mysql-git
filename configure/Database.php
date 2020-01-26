@@ -15,10 +15,10 @@ class Database {
 		$this->statements = array_merge($this->statements, $tables->getStatements());
 		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $tables->getCommentedOutStatements());
 
-		$columns = new Columns($this->dbStructure, $this->fileStructure);
+		/*$columns = new Columns($this->dbStructure, $this->fileStructure);
 		$columns->configure();
 		$this->statements = array_merge($this->statements, $columns->getStatements());
-		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $columns->getCommentedOutStatements());
+		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $columns->getCommentedOutStatements());*/
 	}
 
 	protected function configureDatabase() {

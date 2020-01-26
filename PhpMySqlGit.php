@@ -18,6 +18,7 @@ spl_autoload_register(function ($objectToInlucde) {
 		} else {
 			switch ($class) {
 				case 'Exception' :
+				case 'Common' :
 					require_once(__DIR__.DIRECTORY_SEPARATOR.'core'.DIRECTORY_SEPARATOR.$class.".php");
 					break;
 				case 'Database' :

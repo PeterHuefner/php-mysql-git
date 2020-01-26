@@ -14,9 +14,9 @@ trait Configuration {
 
 	protected $database;
 
-	function __construct($dbStructure, $fileStructure) {
-		$this->dbStructure   = $dbStructure;
-		$this->fileStructure = $fileStructure;
+	function __construct(&$dbStructure, &$fileStructure) {
+		$this->dbStructure   = &$dbStructure;
+		$this->fileStructure = &$fileStructure;
 		$this->database      = PhpMySqlGit::$instance->getDbname();
 	}
 

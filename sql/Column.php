@@ -6,8 +6,9 @@ namespace PhpMySqlGit\SQL;
 
 class Column {
 	use SQLObject;
-
+	
 	protected $previousColumn;
+	protected $firstColumn = false;
 
 	/**
 	 * @param mixed $previousColumn
@@ -16,11 +17,38 @@ class Column {
 		$this->previousColumn = $previousColumn;
 	}
 
-	public function add() {
-		return "ADD ".$this->columnDefinition();
+	/**
+	 * @param bool $firstColumn
+	 */
+	public function setFirstColumn(bool $firstColumn): void {
+		$this->firstColumn = $firstColumn;
 	}
 
-	protected function columnDefinition() {
+	/**
+	 * @return string
+	 */
+	public function add() {
+		return "ADD COLUMN ".$this->columnDefinition();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function modify() {
+		return "MODIFY COLUMN ".$this->columnDefinition();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function drop() {
+		return "DROP COLUMN `{$this->name}`";
+	}
+
+	/**
+	 * @return string
+	 */
+	public function columnDefinition() {
 		$column_type = strtoupper($this->definition["column_type"]);
 
 		$sql =
@@ -44,9 +72,9 @@ class Column {
 			$sql .= " COMMENT ".\PhpMySqlGit\PhpMySqlGit::$instance->escape($this->definition["comment"]);
 		}
 
-		if ($this->definition["character_set"]) {
+		/*if ($this->definition["character_set"]) {
 			$sql .= " CHARACTER SET {$this->definition["character_set"]}";
-		}
+		}*/
 
 		if ($this->definition["collation"]) {
 			$sql .= " COLLATE {$this->definition["collation"]}";
@@ -58,11 +86,16 @@ class Column {
 
 		if ($this->previousColumn) {
 			$sql .= " AFTER `{$this->previousColumn}`";
+		} else if ($this->firstColumn) {
+			$sql .= " FIRST";
 		}
 
 		return $sql;
 	}
 
+	/**
+	 * @return false|mixed|string
+	 */
 	protected function defaultValue() {
 		$default = $this->definition["default"];
 		if ($default) {
