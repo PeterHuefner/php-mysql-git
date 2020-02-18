@@ -1,7 +1,7 @@
 <?php
 
 
-namespace PhpMySqlGit;
+namespace PhpMySqlGit\Core;
 
 
 class Exception extends \Exception {

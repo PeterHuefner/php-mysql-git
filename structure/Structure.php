@@ -1,8 +1,10 @@
 <?php
 
 
-namespace PhpMySqlGit;
+namespace PhpMySqlGit\Structure;
 
+use PhpMySqlGit\Core\Exception;
+use PhpMySqlGit\PhpMySqlGit;
 
 class Structure {
 
@@ -46,6 +48,10 @@ class Structure {
 		if (is_dir($this->directory)) {
 			$this->structure["databases"] = [];
 			if ($this->addFileContentsToArray($this->path($this->directory, [$database, "database.php"]), $this->structure["databases"])) {
+				if (PhpMySqlGit::$instance->isSaveNoDbName()) {
+					$this->structure["databases"][$database] = $this->structure["databases"]["DATABASE"];
+					unset($this->structure["databases"]["DATABASE"]);
+				}
 				$this->structure["databases"][$database]["tables"] = [];
 				foreach (glob($this->path($this->directory, [$database, "tables", "*.php"])) as $tableFile) {
 					$this->addFileContentsToArray($tableFile, $this->structure["databases"][$database]["tables"]);
@@ -56,11 +62,15 @@ class Structure {
 		}
 	}
 
-	protected function path($base, $parts) {
+	protected function path($base, $parts = []) {
 		$path = $base;
 
 		if ($path) {
 			$path = dirname($path) . DIRECTORY_SEPARATOR . basename($path);
+		}
+
+		if (PhpMySqlGit::$instance->isSaveNoDbName()) {
+			array_splice($parts, 0, 1);
 		}
 
 		$path .= DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $parts);
@@ -76,9 +86,16 @@ class Structure {
 
 	protected function saveDatabaseConfig($database, $settings) {
 		unset($settings["tables"]);
-		$settings = [
-			$database => $settings
-		];
+		if (PhpMySqlGit::$instance->isSaveNoDbName()) {
+			unset($settings['SCHEMA_NAME']);
+			$settings = [
+				"DATABASE" => $settings
+			];
+		} else {
+			$settings = [
+				$database => $settings
+			];
+		}
 		$this->saveArrayToFile($settings, $this->path($this->directory, [$database, "database.php"]));
 	}
 

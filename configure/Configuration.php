@@ -1,8 +1,10 @@
 <?php
 
 
-namespace PhpMySqlGit;
+namespace PhpMySqlGit\Configure;
 
+
+use PhpMySqlGit\PhpMySqlGit;
 
 trait Configuration {
 

@@ -1,11 +1,12 @@
 <?php
 
 
-namespace PhpMySqlGit;
+namespace PhpMySqlGit\Configure;
 
 
-use PhpMySqlGit\SQL\Column;
-use PhpMySqlGit\SQL\Table;
+use PhpMySqlGit\PhpMySqlGit;
+use PhpMysSqlGit\Sql\Column;
+use PhpMysSqlGit\Sql\Table;
 
 class Tables {
 	use Configuration;
@@ -42,6 +43,7 @@ class Tables {
 			if (is_scalar($settings)) {
 				if (!$this->checkTableSetting($settingName)) {
 					$alterTableOptions = true;
+					PhpMySqlGit::$changedObjects["databases"][$this->database]["tables"][$this->currentTable] = true;
 				}
 			}
 		}
@@ -55,6 +57,7 @@ class Tables {
 			$this->statements[] =
 				(new Table($this->currentTable, $this->fileStructure['databases'][$this->database]['tables'][$this->currentTable]))
 					->alter($alterStatements, $alterTableOptions);
+			PhpMySqlGit::$changedObjects["databases"][$this->database]["tables"][$this->currentTable] = true;
 		}
 	}
 

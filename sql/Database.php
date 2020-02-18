@@ -1,7 +1,7 @@
 <?php
 
 
-namespace PhpMySqlGit\SQL;
+namespace PhpMysSqlGit\Sql;
 
 
 class Database {

@@ -1,8 +1,10 @@
 <?php
 
 
-namespace PhpMySqlGit\SQL;
+namespace PhpMysSqlGit\Sql;
 
+
+use PhpMySqlGit\Configure\Columns;
 
 class Table {
 	use SQLObject;
@@ -15,14 +17,14 @@ class Table {
 		$previousColumn = null;
 		foreach ($this->definition["columns"] as $columnIndex => $columnDefinition) {
 			$column = new Column($columnDefinition["name"], $columnDefinition);
-			$column->setPreviousColumn($previousColumn);
-
 			$cols[] = $column->columnDefinition();
-
-			$previousColumn = $columnDefinition["name"];
 		}
 
 		$sql .= implode(", ", $cols);
+
+		if ($keyStatements = $this->localKeyDefinition()) {
+			$sql .= ", ".implode(", ", $keyStatements);
+		}
 
 		$sql .= ") ".
 			$this->tableOptions().
@@ -82,5 +84,20 @@ class Table {
 			$this->characterSet()." ".
 			$this->collation()." ".
 			$this->comment();
+	}
+
+	public function localKeyDefinition($withAdd = false) {
+		$statements = [];
+
+		foreach (Columns::KEY_TYPES as $keyType => $handlers) {
+			if (isset($this->definition[$keyType])) {
+				foreach ($this->definition[$keyType] as $keyName => &$keyDefinition) {
+					$keyMaker = new Key($keyName, $keyDefinition);
+					$statements[] = ($withAdd ? "ADD " : "").call_user_func([$keyMaker, $handlers['definition']]);
+				}
+			}
+		}
+
+		return $statements;
 	}
 }

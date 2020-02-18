@@ -9,11 +9,23 @@ spl_autoload_register(function ($objectToInlucde) {
 
 	$file = __DIR__.DIRECTORY_SEPARATOR.$class.".php";
 
+	$dir = $namespace = $parts[1];
+	if ($dir) {
+		$dir = strtolower($dir[0]).substr($dir, 1);
+		if (!is_dir(__DIR__.DIRECTORY_SEPARATOR.$dir)) {
+			$dir = null;
+		}
+	}
+
 	if (file_exists($file)) {
 		require_once($file);
 	} else {
+		$file = __DIR__.DIRECTORY_SEPARATOR.$dir.DIRECTORY_SEPARATOR.$class.".php";
+		if (file_exists($file)) {
+			require_once($file);
+		}
 
-		if ($parts[1] == "SQL") {
+		/*if ($parts[1] == "Sql") {
 			require_once(__DIR__.DIRECTORY_SEPARATOR.'sql'.DIRECTORY_SEPARATOR.$class.".php");
 		} else {
 			switch ($class) {
@@ -25,13 +37,14 @@ spl_autoload_register(function ($objectToInlucde) {
 				case 'Tables' :
 				case 'Columns' :
 				case 'Configuration' :
+				case 'ForeignKeys' :
 					require_once(__DIR__.DIRECTORY_SEPARATOR.'configure'.DIRECTORY_SEPARATOR.$class.".php");
 					break;
 				case 'Structure' :
 					require_once(__DIR__.DIRECTORY_SEPARATOR.'structure'.DIRECTORY_SEPARATOR.$class.".php");
 					break;
 			}
-		}
+		}*/
 
 	}
 });
@@ -43,6 +56,8 @@ class PhpMySqlGit {
 	 */
 	public static $instance;
 
+	public static $changedObjects = [];
+
 	#region internal properties
 
 	/**
@@ -53,7 +68,7 @@ class PhpMySqlGit {
 	/**
 	 * @var array
 	 */
-	protected array $dbStructure = [];
+	protected $dbStructure = [];
 
 	#endregion
 	#region setter and getter
@@ -95,15 +110,52 @@ class PhpMySqlGit {
 	 */
 	protected $skipForeignKeyChecks = false;
 
+	/**
+	 * the mod to create files used in chmod
+	 *
+	 * @var string
+	 */
 	protected $fileMod = "0664";
 
+	/**
+	 * the mod to create dirs used in chmod
+	 *
+	 * @var string
+	 */
 	protected $dirMod = "0775";
 
+	/**
+	 * ignores the charset stored in the database when saving the structure.
+	 * the given overwrite charset is used instead. a good way to ensure that databases have the same charset.
+	 *
+	 * @var string
+	 */
 	protected $overwriteCharset;
 
+	/**
+	 * ignores the engine stored in the database when saving the structure.
+	 * the given overwrite engine is used instead. a good way to ensure that databases have the same engine.
+	 *
+	 * @var string
+	 */
 	protected $overwriteEngine;
 
+	/**
+	 * ignores the row format stored in the database when saving the structure.
+	 * the given overwrite row format is used instead. a good way to ensure that databases have the same row format.
+	 *
+	 * @var string
+	 */
 	protected $overwriteRowFormat;
+
+	/**
+	 * Defaults to true.
+	 * If true the database name is not saved in structure and has to be given when constructing the class within the
+	 * PDO connection string or right before any database transaction with {@link self::setDbname()} setDbname
+	 *
+	 * @var bool
+	 */
+	protected $saveNoDbName = true;
 
 	/**
 	 * @return string
@@ -259,6 +311,20 @@ class PhpMySqlGit {
 		return $this->overwriteRowFormat;
 	}
 
+	/**
+	 * @param bool $saveNoDbName
+	 */
+	public function setSaveNoDbName(bool $saveNoDbName): void {
+		$this->saveNoDbName = $saveNoDbName;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isSaveNoDbName(): bool {
+		return $this->saveNoDbName;
+	}
+
 	#endregion
 
 	function __construct($dbConnection) {
@@ -282,7 +348,7 @@ class PhpMySqlGit {
 	public function configureDatabase($structureSource) {
 		$this->dbStructure = $this->database->readDbStructure();
 		if (is_string($structureSource)) {
-			$structure = new Structure($structureSource);
+			$structure = new Structure\Structure($structureSource);
 			$structure->readStructure($this->dbname);
 			$fileStructure = $structure->getStructure();
 		} else {
@@ -295,20 +361,22 @@ class PhpMySqlGit {
 
 		$statements = [];
 
-		$database = new Database($this->dbStructure, $fileStructure);
+		$database = new Configure\Database($this->dbStructure, $fileStructure);
 		$database->configure();
 		$statements = array_merge($statements, $database->getStatements());
 
-		var_dump($statements);
-		var_dump($database->getCommentedOutStatements());
+		//var_dump($statements);
+		//var_dump($database->getCommentedOutStatements());
 		//var_dump($this->dbStructure);
+
+		return array_merge($statements, $database->getCommentedOutStatements());
 	}
 
 	public function saveStructure($saveToDir = null, $tables = []) {
 		$this->dbStructure = $this->database->readDbStructure();
 
 		if ($saveToDir && is_dir($saveToDir)) {
-			$structure = new Structure($saveToDir);
+			$structure = new Structure\Structure($saveToDir);
 			$structure->saveStructure($this->dbStructure, $tables);
 		} else {
 			return $this->dbStructure;

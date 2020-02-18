@@ -119,7 +119,7 @@ class SqlConnection {
 				$indexType = "§§keys";
 				if ($index["Key_name"] === "PRIMARY") {
 					$indexType = "§§primaryKeys";
-				} elseif ($index["Non_unique"] === 0) {
+				} elseif ($index["Non_unique"] === "0" || $index["Non_unique"] === 0) {
 					$indexType = "§§uniqueKeys";
 				} elseif ($index['Index_type'] === "FULLTEXT") {
 					$indexType = "§§fulltextKeys";
@@ -136,6 +136,9 @@ class SqlConnection {
 					$structure[$indexType][$index["Key_name"]]["index_type"] = $index["Index_type"];
 				}
 			}
+			if ($table === "addresses") {
+
+			}
 		}
 	}
 
@@ -149,6 +152,12 @@ class SqlConnection {
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_table"]     = $foreignKey["REFERENCED_TABLE_NAME"];
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_columns"][] = $foreignKey["REFERENCED_COLUMN_NAME"];
 
+			}
+
+			$sql = "SELECT * FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = '".$table."';";
+			foreach ($this->pdo->query($sql) as $foreignKey) {
+				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["UPDATE_RULE"] = $foreignKey["UPDATE_RULE"];
+				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["DELETE_RULE"] = $foreignKey["DELETE_RULE"];
 			}
 		}
 	}
