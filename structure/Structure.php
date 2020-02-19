@@ -25,6 +25,10 @@ class Structure {
 	public function saveStructure($structure, $tables) {
 		$this->structure = $structure;
 
+		if (!is_dir($this->directory)) {
+			mkdir($this->directory, PhpMySqlGit::$instance->getDirMod(), true);
+		}
+
 		if (is_dir($this->directory)) {
 			foreach ($this->structure['databases'] as $database => $settings) {
 				$this->checkCreateDir($this->path($this->directory, [$database]));

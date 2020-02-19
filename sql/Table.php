@@ -11,7 +11,7 @@ class Table {
 
 
 	public function create() {
-		$sql = "CREATE TABLE `$this->name` (";
+		$sql = "CREATE TABLE `$this->name` (\n\t";
 
 		$cols = [];
 		$previousColumn = null;
@@ -20,15 +20,14 @@ class Table {
 			$cols[] = $column->columnDefinition();
 		}
 
-		$sql .= implode(", ", $cols);
+		$sql .= implode(",\n\t", $cols);
 
 		if ($keyStatements = $this->localKeyDefinition()) {
-			$sql .= ", ".implode(", ", $keyStatements);
+			$sql .= ",\n\t".implode(",\n\t", $keyStatements);
 		}
 
-		$sql .= ") ".
-			$this->tableOptions().
-			";";
+		$sql .= "\n) ".
+			$this->tableOptions();
 
 		return $sql;
 	}
@@ -74,7 +73,7 @@ class Table {
 	}
 
 	public function comment() {
-		return "COMMENT = ".\PhpMySqlGit\PhpMySqlGit::$instance->escape($this->definition["comment"]);
+		return ($this->definition["comment"] ? "COMMENT = ".\PhpMySqlGit\PhpMySqlGit::$instance->escape($this->definition["comment"]) : "");
 	}
 
 	public function tableOptions() {

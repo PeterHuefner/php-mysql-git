@@ -49,7 +49,7 @@ class Column {
 	 * @return string
 	 */
 	public function columnDefinition() {
-		$column_type = strtoupper($this->definition["column_type"]);
+		$column_type = $this->definition["column_type"];
 
 		$sql =
 			"`{$this->name}` {$column_type}";
@@ -97,7 +97,9 @@ class Column {
 	 * @return false|mixed|string
 	 */
 	protected function defaultValue() {
-		$default = $this->definition["default"];
+		return $this->definition["default"];
+
+		/*$default = $this->definition["default"];
 		if ($default) {
 			switch (strtoupper($default)) {
 				case 'CURRENT_TIMESTAMP' :
@@ -109,6 +111,6 @@ class Column {
 			}
 		}
 
-		return $default;
+		return $default;*/
 	}
 }

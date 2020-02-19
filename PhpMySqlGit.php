@@ -24,28 +24,6 @@ spl_autoload_register(function ($objectToInlucde) {
 		if (file_exists($file)) {
 			require_once($file);
 		}
-
-		/*if ($parts[1] == "Sql") {
-			require_once(__DIR__.DIRECTORY_SEPARATOR.'sql'.DIRECTORY_SEPARATOR.$class.".php");
-		} else {
-			switch ($class) {
-				case 'Exception' :
-				case 'Common' :
-					require_once(__DIR__.DIRECTORY_SEPARATOR.'core'.DIRECTORY_SEPARATOR.$class.".php");
-					break;
-				case 'Database' :
-				case 'Tables' :
-				case 'Columns' :
-				case 'Configuration' :
-				case 'ForeignKeys' :
-					require_once(__DIR__.DIRECTORY_SEPARATOR.'configure'.DIRECTORY_SEPARATOR.$class.".php");
-					break;
-				case 'Structure' :
-					require_once(__DIR__.DIRECTORY_SEPARATOR.'structure'.DIRECTORY_SEPARATOR.$class.".php");
-					break;
-			}
-		}*/
-
 	}
 });
 
@@ -56,6 +34,11 @@ class PhpMySqlGit {
 	 */
 	public static $instance;
 
+	/**
+	 * a collection of Tables, Columns and Keys that would changed by the execution of generated SQL-Statements
+	 *
+	 * @var array
+	 */
 	public static $changedObjects = [];
 
 	#region internal properties
@@ -128,25 +111,25 @@ class PhpMySqlGit {
 	 * ignores the charset stored in the database when saving the structure.
 	 * the given overwrite charset is used instead. a good way to ensure that databases have the same charset.
 	 *
-	 * @var string
+	 * @var bool
 	 */
-	protected $overwriteCharset;
+	protected $overwriteCharset = false;
 
 	/**
 	 * ignores the engine stored in the database when saving the structure.
 	 * the given overwrite engine is used instead. a good way to ensure that databases have the same engine.
 	 *
-	 * @var string
+	 * @var bool
 	 */
-	protected $overwriteEngine;
+	protected $overwriteEngine = false;
 
 	/**
 	 * ignores the row format stored in the database when saving the structure.
 	 * the given overwrite row format is used instead. a good way to ensure that databases have the same row format.
 	 *
-	 * @var string
+	 * @var bool
 	 */
-	protected $overwriteRowFormat;
+	protected $overwriteRowFormat = false;
 
 	/**
 	 * Defaults to true.
@@ -169,6 +152,9 @@ class PhpMySqlGit {
 	 */
 	public function setDbname($dbname): void {
 		$this->dbname = $dbname;
+		if ($this->database) {
+			$this->database->setDatabase($this->dbname);
+		}
 	}
 
 	/**
@@ -279,7 +265,7 @@ class PhpMySqlGit {
 	/**
 	 * @return mixed
 	 */
-	public function getOverwriteCharset() {
+	public function isOverwriteCharset() {
 		return $this->overwriteCharset;
 	}
 
@@ -293,7 +279,7 @@ class PhpMySqlGit {
 	/**
 	 * @return mixed
 	 */
-	public function getOverwriteEngine() {
+	public function isOverwriteEngine() {
 		return $this->overwriteEngine;
 	}
 
@@ -307,7 +293,7 @@ class PhpMySqlGit {
 	/**
 	 * @return mixed
 	 */
-	public function getOverwriteRowFormat() {
+	public function isOverwriteRowFormat() {
 		return $this->overwriteRowFormat;
 	}
 
@@ -375,12 +361,12 @@ class PhpMySqlGit {
 	public function saveStructure($saveToDir = null, $tables = []) {
 		$this->dbStructure = $this->database->readDbStructure();
 
-		if ($saveToDir && is_dir($saveToDir)) {
+		if ($saveToDir) {
 			$structure = new Structure\Structure($saveToDir);
 			$structure->saveStructure($this->dbStructure, $tables);
-		} else {
-			return $this->dbStructure;
 		}
+
+		return $this->dbStructure;
 	}
 
 	public function saveData($table = null, $saveToFile = null) {

@@ -13,7 +13,14 @@ class SqlConnection {
 
 	function __construct($pdoString, $username, $password, $datbase) {
 		$this->pdo      = new \PDO($pdoString, $username, $password);
-		$this->database = $datbase;
+		$this->setDatabase($datbase);
+	}
+
+	/**
+	 * @param mixed $database
+	 */
+	public function setDatabase($database): void {
+		$this->database = $database;
 	}
 
 	public function escape($string) {
@@ -47,8 +54,14 @@ class SqlConnection {
 		if ($statement) {
 			$dbStructure = $statement->fetch(\PDO::FETCH_ASSOC);
 			if ($dbStructure) {
+				$status = true;
 				$this->pdo->query("USE $this->database;");
 				$this->structure["databases"][$this->database] = $dbStructure;
+
+				if (PhpMySqlGit::$instance->isOverwriteCharset()) {
+					$this->structure["databases"][$this->database]['DEFAULT_CHARACTER_SET_NAME'] = PhpMySqlGit::$instance->getCharset();
+					$this->structure["databases"][$this->database]['DEFAULT_COLLATION_NAME']     = PhpMySqlGit::$instance->getCollation();
+				}
 			}
 		}
 
@@ -78,11 +91,11 @@ class SqlConnection {
 
 	protected function getTables() {
 		$sql = "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE';";
-		foreach ($this->pdo->query($sql) as $table) {
+		foreach ($this->query($sql) as $table) {
 			$this->structure["databases"][$this->database]["tables"][$table["TABLE_NAME"]] = [
-				"engine"     => PhpMySqlGit::$instance->getOverwriteEngine() ? PhpMySqlGit::$instance->getEngine() : $table["ENGINE"],
-				"row_format" => PhpMySqlGit::$instance->getOverwriteRowFormat() ? PhpMySqlGit::$instance->getRowFormat() : $table["ROW_FORMAT"],
-				"collation"  => PhpMySqlGit::$instance->getOverwriteCharset() ? PhpMySqlGit::$instance->getCollation() : $table["TABLE_COLLATION"],
+				"engine"     => PhpMySqlGit::$instance->isOverwriteEngine() ? PhpMySqlGit::$instance->getEngine() : $table["ENGINE"],
+				"row_format" => PhpMySqlGit::$instance->isOverwriteRowFormat() ? PhpMySqlGit::$instance->getRowFormat() : $table["ROW_FORMAT"],
+				"collation"  => PhpMySqlGit::$instance->isOverwriteCharset() ? PhpMySqlGit::$instance->getCollation() : $table["TABLE_COLLATION"],
 				"comment"    => $table["TABLE_COMMENT"] ?? '',
 			];
 		}
@@ -90,8 +103,8 @@ class SqlConnection {
 
 	protected function getColumns() {
 		foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
-			$sql = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '".$table."' ORDER BY ORDINAL_POSITION;";
-			foreach ($this->pdo->query($sql) as $column) {
+			$sql = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table ORDER BY ORDINAL_POSITION;";
+			foreach ($this->query($sql, [":table" => $table]) as $column) {
 				$columnDefinition = [
 					"name"           => $column["COLUMN_NAME"],
 					"default"        => $this->getColumnDefault($column["COLUMN_DEFAULT"]),
@@ -99,8 +112,8 @@ class SqlConnection {
 					"type"           => $column["DATA_TYPE"],
 					"column_type"    => $column["COLUMN_TYPE"],
 					"length"         => ($column["CHARACTER_MAXIMUM_LENGTH"] ?? $column["NUMERIC_PRECISION"].($column["NUMERIC_SCALE"] != 0 ? ",".$column["NUMERIC_SCALE"] : "")),
-					"character_set"  => $column["CHARACTER_SET_NAME"] && PhpMySqlGit::$instance->getOverwriteCharset() ? PhpMySqlGit::$instance->getCharset() : $column["CHARACTER_SET_NAME"],
-					"collation"      => $column["COLLATION_NAME"] && PhpMySqlGit::$instance->getOverwriteCharset() ? PhpMySqlGit::$instance->getCollation() : $column["COLLATION_NAME"],
+					"character_set"  => $column["CHARACTER_SET_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() ? PhpMySqlGit::$instance->getCharset() : $column["CHARACTER_SET_NAME"],
+					"collation"      => $column["COLLATION_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() ? PhpMySqlGit::$instance->getCollation() : $column["COLLATION_NAME"],
 					"auto_increment" => $column["EXTRA"] === "auto_increment",
 					"comment"        => $column["COLUMN_COMMENT"],
 					"on_update"      => stripos($column["EXTRA"], "on update") !== false,
@@ -114,7 +127,7 @@ class SqlConnection {
 	protected function getIndicies() {
 		foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
 			$sql = "SHOW INDEX FROM ".$table.";";
-			foreach ($this->pdo->query($sql) as $index) {
+			foreach ($this->query($sql) as $index) {
 
 				$indexType = "§§keys";
 				if ($index["Key_name"] === "PRIMARY") {
@@ -144,18 +157,18 @@ class SqlConnection {
 
 	protected function getForeignKeys() {
 		foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
-			$sql = "SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '".$table."' AND NOT ISNULL(REFERENCED_TABLE_NAME) ORDER BY ORDINAL_POSITION;";
-			foreach ($this->pdo->query($sql) as $foreignKey) {
+			$sql = "SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND NOT ISNULL(REFERENCED_TABLE_NAME) ORDER BY ORDINAL_POSITION;";
+			foreach ($this->query($sql, [":table" => $table]) as $foreignKey) {
 
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["columns"][]            = $foreignKey["COLUMN_NAME"];
-				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_schema"]    = $foreignKey["REFERENCED_TABLE_SCHEMA"];
+				//$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_schema"]    = $foreignKey["REFERENCED_TABLE_SCHEMA"];
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_table"]     = $foreignKey["REFERENCED_TABLE_NAME"];
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_columns"][] = $foreignKey["REFERENCED_COLUMN_NAME"];
 
 			}
 
-			$sql = "SELECT * FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = '".$table."';";
-			foreach ($this->pdo->query($sql) as $foreignKey) {
+			$sql = "SELECT * FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = :table;";
+			foreach ($this->query($sql, [":table" => $table]) as $foreignKey) {
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["UPDATE_RULE"] = $foreignKey["UPDATE_RULE"];
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["DELETE_RULE"] = $foreignKey["DELETE_RULE"];
 			}

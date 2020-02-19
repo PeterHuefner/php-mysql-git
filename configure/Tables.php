@@ -17,8 +17,14 @@ class Tables {
 		$dbTables   = &$this->dbStructure["databases"][$this->database]['tables'];
 		$fileTables = &$this->fileStructure["databases"][$this->database]['tables'];
 
-		$missingTables    = array_diff(array_keys($fileTables), array_keys($dbTables));
-		$additionalTables = array_diff(array_keys($dbTables), array_keys($fileTables));
+		if ($dbTables) {
+			$missingTables    = array_diff(array_keys($fileTables), array_keys($dbTables));
+			$additionalTables = array_diff(array_keys($dbTables), array_keys($fileTables));
+		} else {
+			// not a single table exists in the database - so all are missing and no additional
+			$missingTables    = array_keys($fileTables);
+			$additionalTables = [];
+		}
 
 		foreach ($missingTables as $missingTable) {
 			$this->statements[] = (new Table($missingTable, $fileTables[$missingTable]))->create();
@@ -28,10 +34,12 @@ class Tables {
 			$this->commentedOutStatements[] = "/* ".(new Table($additionalTable, []))->drop()." /**/";
 		}
 
-		foreach ($dbTables as $tableName => &$tableSettings) {
-			if (!empty($fileTables[$tableName])) {
-				$this->currentTable = $tableName;
-				$this->checkTable();
+		if ($dbTables) {
+			foreach ($dbTables as $tableName => &$tableSettings) {
+				if (!empty($fileTables[$tableName])) {
+					$this->currentTable = $tableName;
+					$this->checkTable();
+				}
 			}
 		}
 	}
@@ -42,7 +50,7 @@ class Tables {
 		foreach ($this->dbStructure["databases"][$this->database]['tables'][$this->currentTable] as $settingName => &$settings) {
 			if (is_scalar($settings)) {
 				if (!$this->checkTableSetting($settingName)) {
-					$alterTableOptions = true;
+					$alterTableOptions                                                                        = true;
 					PhpMySqlGit::$changedObjects["databases"][$this->database]["tables"][$this->currentTable] = true;
 				}
 			}
@@ -54,7 +62,7 @@ class Tables {
 		$alterStatements = $columnChecker->checkTableColumns();
 
 		if ($alterStatements || $alterTableOptions) {
-			$this->statements[] =
+			$this->statements[]                                                                       =
 				(new Table($this->currentTable, $this->fileStructure['databases'][$this->database]['tables'][$this->currentTable]))
 					->alter($alterStatements, $alterTableOptions);
 			PhpMySqlGit::$changedObjects["databases"][$this->database]["tables"][$this->currentTable] = true;

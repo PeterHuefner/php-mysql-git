@@ -11,6 +11,7 @@ class Database {
 	use Configuration;
 
 	protected $originDbStructure;
+	protected $skipGlobalUseStatement = false;
 
 	public function configure() {
 		$this->originDbStructure = $this->dbStructure;
@@ -52,6 +53,8 @@ class Database {
 
 		} else {
 			$this->statements[] = $this->getDb()->create();
+			$this->statements[] = "USE `{$this->database}`";
+			$this->skipGlobalUseStatement = true;
 		}
 	}
 
@@ -124,6 +127,10 @@ class Database {
 			}
 		}
 
-		return array_merge(["USE `{$this->database}`;"], $this->statements);
+		if (!$this->skipGlobalUseStatement) {
+			$this->statements = array_merge(["USE `{$this->database}`;"], $this->statements);
+		}
+
+		return $this->statements;
 	}
 }

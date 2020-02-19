@@ -34,6 +34,8 @@ class ForeignKeys {
 	protected function checkForeignKeysForTable($tableName, &$structureTableSettings) {
 		$dbTableSettings = &$this->dbStructure["databases"][$this->database]["tables"][$tableName];
 
+		$addStatements = [];
+
 		foreach ($structureTableSettings["§§foreignKeys"] as $foreignKeyName => $foreignKeySettings) {
 			if (!empty($dbTableSettings["§§foreignKeys"][$foreignKeyName])) {
 				if (!Common::array_compare($foreignKeySettings, $dbTableSettings["§§foreignKeys"][$foreignKeyName])) {
@@ -41,16 +43,20 @@ class ForeignKeys {
 					$key = new Key($foreignKeyName, $foreignKeySettings);
 
 					$this->statements[] = "ALTER TABLE `{$tableName}` ".$key->dropForeignKey();
-					$this->statements[] = "ALTER TABLE `{$tableName}`  ADD ".$key->foreignKeyDefinition();
+					$addStatements[$tableName][] = "ADD ".$key->foreignKeyDefinition();
 
 					$dbTableSettings["§§foreignKeys"][$foreignKeyName] = $foreignKeySettings;
 				}
 			} else {
 				PhpMySqlGit::$changedObjects["databases"][$this->database]["foreignKeys"][$tableName][$foreignKeyName] = true;
 				$key = new Key($foreignKeyName, $foreignKeySettings);
-				$this->statements[] = "ALTER TABLE `{$tableName}` ADD ".$key->foreignKeyDefinition();
+				$addStatements[$tableName][] = "ADD ".$key->foreignKeyDefinition();
 				$dbTableSettings["§§foreignKeys"][$foreignKeyName] = $foreignKeySettings;
 			}
+		}
+
+		foreach ($addStatements as $tableName => $statements) {
+			$this->statements[] = "ALTER TABLE `{$tableName}` \n\t".implode(",\n\t", $statements);
 		}
 	}
 }
