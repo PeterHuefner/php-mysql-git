@@ -341,19 +341,11 @@ class PhpMySqlGit {
 			$fileStructure = $structureSource;
 		}
 
-		/*echo("file structure\n");
-		var_dump($fileStructure);
-		echo("\n\n");*/
-
 		$statements = [];
 
 		$database = new Configure\Database($this->dbStructure, $fileStructure);
 		$database->configure();
 		$statements = array_merge($statements, $database->getStatements());
-
-		//var_dump($statements);
-		//var_dump($database->getCommentedOutStatements());
-		//var_dump($this->dbStructure);
 
 		return array_merge($statements, $database->getCommentedOutStatements());
 	}
@@ -369,8 +361,15 @@ class PhpMySqlGit {
 		return $this->dbStructure;
 	}
 
-	public function saveData($table = null, $saveToFile = null) {
+	public function saveData($tables = [], $saveToDir = null) {
+		$data = $this->database->getData($tables);
 
+		if ($saveToDir) {
+			$structure = new Structure\Structure($saveToDir);
+			$structure->saveData($data, $this->dbname);
+		}
+
+		return $data;
 	}
 
 	public function escape($string) {

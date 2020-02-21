@@ -3,6 +3,7 @@
 
 namespace PhpMySqlGit\Structure;
 
+use PhpMySqlGit\Core\Common;
 use PhpMySqlGit\Core\Exception;
 use PhpMySqlGit\PhpMySqlGit;
 
@@ -20,14 +21,14 @@ class Structure {
 
 	public function __construct($directory) {
 		$this->directory = $directory;
-	}
-
-	public function saveStructure($structure, $tables) {
-		$this->structure = $structure;
 
 		if (!is_dir($this->directory)) {
 			mkdir($this->directory, PhpMySqlGit::$instance->getDirMod(), true);
 		}
+	}
+
+	public function saveStructure($structure, $tables) {
+		$this->structure = $structure;
 
 		if (is_dir($this->directory)) {
 			foreach ($this->structure['databases'] as $database => $settings) {
@@ -42,6 +43,18 @@ class Structure {
 
 					$this->saveTableConfig($database, $tableName, $tableSettings);
 				}
+			}
+		} else {
+			throw new Exception($this->directory." does not exists");
+		}
+	}
+
+	public function saveData($data, $database) {
+		if (is_dir($this->directory)) {
+			$this->checkCreateDir($this->path($this->directory, [$database, "data"]));
+
+			foreach ($data as $tableName => &$tableData) {
+				$this->saveArrayToFile([$tableName => $tableData], $this->path($this->directory, [$database, "data", $tableName.".php"]));
 			}
 		} else {
 			throw new Exception($this->directory." does not exists");
@@ -112,11 +125,7 @@ class Structure {
 	}
 
 	protected function saveArrayToFile($array, $file) {
-		$content = var_export($array, true);
-
-		$content = "<?php\nreturn ".$content.";";
-
-		file_put_contents($file, $content);
+		Common::saveArrayToFile($array, $file);
 	}
 
 	protected function readArrayFromFile($file) {

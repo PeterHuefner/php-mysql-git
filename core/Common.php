@@ -61,4 +61,12 @@ class Common {
 
 		return $equal;
 	}
+
+	public static function saveArrayToFile($array, $file) {
+		$content = var_export($array, true);
+
+		$content = "<?php\nreturn ".$content.";";
+
+		file_put_contents($file, $content);
+	}
 }

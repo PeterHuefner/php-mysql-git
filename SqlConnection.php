@@ -55,7 +55,7 @@ class SqlConnection {
 			$dbStructure = $statement->fetch(\PDO::FETCH_ASSOC);
 			if ($dbStructure) {
 				$status = true;
-				$this->pdo->query("USE $this->database;");
+				$this->useDatabase();
 				$this->structure["databases"][$this->database] = $dbStructure;
 
 				if (PhpMySqlGit::$instance->isOverwriteCharset()) {
@@ -68,18 +68,23 @@ class SqlConnection {
 		return $status;
 	}
 
+	protected function useDatabase() {
+		$this->pdo->query("USE `$this->database`;");
+	}
+
 	protected function query($sql, $params = []) {
 		$statement = $this->pdo->prepare($sql);
 
 		foreach ($params as $paramName => $paramSettings) {
-			if (!is_array($paramSettings)) {
-				$paramSettings = [
-					'value' => $paramSettings,
-					'type'  => \PDO::PARAM_STR
-				];
+			if (is_array($paramSettings) && array_keys($paramSettings)[0] === 0) {
+				foreach ($paramSettings as $index => $paramSetting) {
+					$paramSetting = $this->prepParam($paramSetting);
+					$statement->bindParam($paramName.$index, $paramSetting['value'], $paramSetting['type']);
+				}
+			} else {
+				$paramSettings = $this->prepParam($paramSettings);
+				$statement->bindParam($paramName, $paramSettings['value'], $paramSettings['type']);
 			}
-
-			$statement->bindParam($paramName, $paramSettings['value'], $paramSettings['type']);
 		}
 
 		if ($statement->execute()) {
@@ -89,9 +94,20 @@ class SqlConnection {
 		}
 	}
 
+	protected function prepParam($param) {
+		if (!is_array($param)) {
+			$param = [
+				'value' => $param,
+				'type'  => \PDO::PARAM_STR
+			];
+		}
+
+		return $param;
+	}
+
 	protected function getTables() {
-		$sql = "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE';";
-		foreach ($this->query($sql) as $table) {
+		$sql = "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = :database AND TABLE_TYPE = 'BASE TABLE';";
+		foreach ($this->query($sql, [":database" => $this->database]) as $table) {
 			$this->structure["databases"][$this->database]["tables"][$table["TABLE_NAME"]] = [
 				"engine"     => PhpMySqlGit::$instance->isOverwriteEngine() ? PhpMySqlGit::$instance->getEngine() : $table["ENGINE"],
 				"row_format" => PhpMySqlGit::$instance->isOverwriteRowFormat() ? PhpMySqlGit::$instance->getRowFormat() : $table["ROW_FORMAT"],
@@ -103,8 +119,8 @@ class SqlConnection {
 
 	protected function getColumns() {
 		foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
-			$sql = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table ORDER BY ORDINAL_POSITION;";
-			foreach ($this->query($sql, [":table" => $table]) as $column) {
+			$sql = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table ORDER BY ORDINAL_POSITION;";
+			foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $column) {
 				$columnDefinition = [
 					"name"           => $column["COLUMN_NAME"],
 					"default"        => $this->getColumnDefault($column["COLUMN_DEFAULT"]),
@@ -126,7 +142,7 @@ class SqlConnection {
 
 	protected function getIndicies() {
 		foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
-			$sql = "SHOW INDEX FROM ".$table.";";
+			$sql = "SHOW INDEX FROM `".$table."`;";
 			foreach ($this->query($sql) as $index) {
 
 				$indexType = "§§keys";
@@ -157,8 +173,8 @@ class SqlConnection {
 
 	protected function getForeignKeys() {
 		foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
-			$sql = "SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND NOT ISNULL(REFERENCED_TABLE_NAME) ORDER BY ORDINAL_POSITION;";
-			foreach ($this->query($sql, [":table" => $table]) as $foreignKey) {
+			$sql = "SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table AND NOT ISNULL(REFERENCED_TABLE_NAME) ORDER BY ORDINAL_POSITION;";
+			foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
 
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["columns"][]            = $foreignKey["COLUMN_NAME"];
 				//$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_schema"]    = $foreignKey["REFERENCED_TABLE_SCHEMA"];
@@ -167,8 +183,8 @@ class SqlConnection {
 
 			}
 
-			$sql = "SELECT * FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = :table;";
-			foreach ($this->query($sql, [":table" => $table]) as $foreignKey) {
+			$sql = "SELECT * FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = :database AND TABLE_NAME = :table;";
+			foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["UPDATE_RULE"] = $foreignKey["UPDATE_RULE"];
 				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["DELETE_RULE"] = $foreignKey["DELETE_RULE"];
 			}
@@ -182,4 +198,33 @@ class SqlConnection {
 
 		return $default;
 	}
+
+	public function getData($tables = []) {
+		$this->useDatabase();
+
+		$data = [];
+		$sql = "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = :database AND TABLE_TYPE = 'BASE TABLE'";
+		$params = [":database" => $this->database];
+		if ($tables) {
+			$tableParams = [];
+			foreach (array_values($tables) as $index => $table) {
+				$tableParams[":table".$index] = $table;
+			}
+			$sql .= "AND TABLE_NAME IN(".array_keys($tableParams).")";
+			$params = array_merge($params, $tableParams);
+		}
+		foreach ($this->query($sql, $params) as $table) {
+			$data[$table["TABLE_NAME"]] = $this->getDataFromTable($table["TABLE_NAME"]);
+		}
+
+		return $data;
+	}
+
+	protected function getDataFromTable($table) {
+		$sql = "SELECT * FROM `".$table."`;";
+		$statement = $this->query($sql);
+		return ($statement ? $statement->fetchAll(\PDO::FETCH_ASSOC) : []);
+	}
+
+
 }
