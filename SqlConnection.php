@@ -11,9 +11,21 @@ class SqlConnection {
 	protected $structure = [];
 	protected $database;
 
-	function __construct($pdoString, $username, $password, $datbase) {
-		$this->pdo      = new \PDO($pdoString, $username, $password);
-		$this->setDatabase($datbase);
+	/**
+	 * SqlConnection constructor.
+	 * @param string|\PDO $pdoString
+	 * @param null|string $username
+	 * @param null|string $password
+	 * @param null|string $database
+	 */
+	function __construct($pdoString, $username = null, $password = null, $database = null) {
+		if ($pdoString instanceof \PDO) {
+			$this->pdo = $pdoString;
+		} else {
+			$this->pdo = new \PDO($pdoString, $username, $password);
+		}
+
+		$this->setDatabase($database);
 	}
 
 	/**
@@ -210,8 +222,11 @@ class SqlConnection {
 			foreach (array_values($tables) as $index => $table) {
 				$tableParams[":table".$index] = $table;
 			}
-			$sql .= "AND TABLE_NAME IN(".array_keys($tableParams).")";
+			//var_dump($tableParams);exit();
+			$sql .= "AND TABLE_NAME IN(".implode(", ", array_keys($tableParams)).")";
 			$params = array_merge($params, $tableParams);
+
+			$sql .= " ORDER BY FIELD(TABLE_NAME, '".implode("', '", $tables)."')";
 		}
 		foreach ($this->query($sql, $params) as $table) {
 			$data[$table["TABLE_NAME"]] = $this->getDataFromTable($table["TABLE_NAME"]);

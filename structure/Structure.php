@@ -53,8 +53,10 @@ class Structure {
 		if (is_dir($this->directory)) {
 			$this->checkCreateDir($this->path($this->directory, [$database, "data"]));
 
+			$counter = 0;
 			foreach ($data as $tableName => &$tableData) {
-				$this->saveArrayToFile([$tableName => $tableData], $this->path($this->directory, [$database, "data", $tableName.".php"]));
+				$this->saveArrayToFile([$tableName => $tableData], $this->path($this->directory, [$database, "data", sprintf('%08d', $counter)."-".$tableName.".php"]));
+				$counter++;
 			}
 		} else {
 			throw new Exception($this->directory." does not exists");
@@ -77,6 +79,29 @@ class Structure {
 		} else {
 			throw new Exception($this->directory." does not exists");
 		}
+	}
+
+	public function readData($database) {
+		$data = [];
+
+		if (is_dir($this->directory)) {
+			$dataPath = $this->path($this->directory, [$database, "data"]);
+			if (is_dir($dataPath)) {
+				foreach (scandir($dataPath) as $tableFile) {
+					$pathinfo = pathinfo($tableFile);
+					if ($tableFile[0] === "." || ($pathinfo['extension'] ?? '') !== 'php') {
+						continue;
+					}
+
+					$tableData = $this->incFile($this->path($this->directory, [$database, "data", $tableFile]));
+					if (is_array($tableData)) {
+						$data = array_merge($data, $tableData);
+					}
+				}
+			}
+		}
+
+		return $data;
 	}
 
 	protected function path($base, $parts = []) {
@@ -131,7 +156,7 @@ class Structure {
 	protected function readArrayFromFile($file) {
 		$array = [];
 		if (file_exists($file)) {
-			$array = include($file);
+			$array = $this->incFile($file);
 		}
 		return $array;
 	}
@@ -142,6 +167,28 @@ class Structure {
 			return $contentArray;
 		}
 		return null;
+	}
+
+	/**
+	 * includes a file and returns the php execution result.
+	 * through output buffering is ensured that no echos or other outputs are written on output stream or buffer
+	 *
+	 * @param $file
+	 * @return mixed
+	 */
+	protected function incFile($file) {
+		$buffer = null;
+		if (ob_get_level() === 0) {
+			ob_start();
+		} else {
+			$buffer = ob_get_clean();
+		}
+		$return = include($file);
+		ob_get_clean();
+		if ($buffer) {
+			echo $buffer;
+		}
+		return $return;
 	}
 
 	/*protected function generateFileName($filename) {

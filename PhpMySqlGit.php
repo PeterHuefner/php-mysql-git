@@ -314,12 +314,17 @@ class PhpMySqlGit {
 	#endregion
 
 	function __construct($dbConnection) {
-		$matches = [];
-		if (preg_match('/dbname=(.+)(;|$)/', $dbConnection['connectionString'], $matches) === 1) {
-			$this->dbname = $matches[1];
+		if (is_array($dbConnection) && !empty($dbConnection['connectionString'])) {
+			$matches = [];
+			if (preg_match('/dbname=(.+)(;|$)/', $dbConnection['connectionString'], $matches) === 1) {
+				$this->dbname = $matches[1];
+			}
+
+			$this->database = new SqlConnection($dbConnection['connectionString'], $dbConnection['username'] ?? null, $dbConnection['password'] ?? null, $this->dbname);
+		} else if ($dbConnection instanceof \PDO) {
+			$this->database = new SqlConnection($dbConnection);
 		}
 
-		$this->database = new SqlConnection($dbConnection['connectionString'], $dbConnection['username'] ?? null, $dbConnection['password'] ?? null, $this->dbname);
 		self::$instance = $this;
 	}
 
@@ -331,12 +336,17 @@ class PhpMySqlGit {
 		self::$instance = $this;
 	}
 
-	public function configureDatabase($structureSource) {
+	public function configureDatabase($structureSource, $noData = false) {
 		$this->dbStructure = $this->database->readDbStructure();
+		$data              = [];
 		if (is_string($structureSource)) {
 			$structure = new Structure\Structure($structureSource);
 			$structure->readStructure($this->dbname);
 			$fileStructure = $structure->getStructure();
+
+			if (!$noData) {
+				$data = $structure->readData($this->dbname);
+			}
 		} else {
 			$fileStructure = $structureSource;
 		}
@@ -347,7 +357,9 @@ class PhpMySqlGit {
 		$database->configure();
 		$statements = array_merge($statements, $database->getStatements());
 
-		return array_merge($statements, $database->getCommentedOutStatements());
+		$defaultData = new Configure\DefaultData($data, $this->dbname);
+
+		return array_merge($statements, $database->getCommentedOutStatements(), $defaultData->getStatements());
 	}
 
 	public function saveStructure($saveToDir = null, $tables = []) {
