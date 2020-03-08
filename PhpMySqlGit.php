@@ -141,6 +141,15 @@ class PhpMySqlGit {
 	protected $saveNoDbName = true;
 
 	/**
+	 * If true the foreign key checks will be enabled before the default data statements.
+	 * When false they will be disabled.
+	 * Afterwards the previous state will be recovered.
+	 *
+	 * @var bool
+	 */
+	protected $foreignKeyChecksForData = true;
+
+	/**
 	 * @return string
 	 */
 	public function getDbname() {
@@ -311,6 +320,20 @@ class PhpMySqlGit {
 		return $this->saveNoDbName;
 	}
 
+	/**
+	 * @return bool
+	 */
+	public function isForeignKeyChecksForData(): bool {
+		return $this->foreignKeyChecksForData;
+	}
+
+	/**
+	 * @param bool $foreignKeyChecksForData
+	 */
+	public function setForeignKeyChecksForData(bool $foreignKeyChecksForData): void {
+		$this->foreignKeyChecksForData = $foreignKeyChecksForData;
+	}
+
 	#endregion
 
 	function __construct($dbConnection) {
@@ -336,17 +359,20 @@ class PhpMySqlGit {
 		self::$instance = $this;
 	}
 
-	public function configureDatabase($structureSource, $noData = false) {
+	/**
+	 * Returns an array of SQL-Statements that will synchronise the current database with the stored structure.
+	 * The $structureSource can be a string to a directory containing the structure or the array with the structure data directly.
+	 *
+	 * @param string|array $structureSource
+	 * @return array
+	 * @throws Core\Exception
+	 */
+	public function configureDatabase($structureSource) {
 		$this->dbStructure = $this->database->readDbStructure();
-		$data              = [];
 		if (is_string($structureSource)) {
 			$structure = new Structure\Structure($structureSource);
 			$structure->readStructure($this->dbname);
 			$fileStructure = $structure->getStructure();
-
-			if (!$noData) {
-				$data = $structure->readData($this->dbname);
-			}
 		} else {
 			$fileStructure = $structureSource;
 		}
@@ -357,9 +383,27 @@ class PhpMySqlGit {
 		$database->configure();
 		$statements = array_merge($statements, $database->getStatements());
 
+		return array_merge($statements, $database->getCommentedOutStatements());
+	}
+
+	/**
+	 * Returns an array of SQL-Statements that will INSERT/UPDATE the default data stored in the structure.
+	 * The $structureSource can be a string to a directory containing the structure/default data or the array with the data directly.
+	 *
+	 * @param string|array $structureSource
+	 * @return array
+	 */
+	public function configureData($structureSource) {
+		if (is_string($structureSource)) {
+			$structure = new Structure\Structure($structureSource);
+			$data = $structure->readData($this->dbname);
+		} else {
+			$data = $structureSource;
+		}
+
 		$defaultData = new Configure\DefaultData($data, $this->dbname);
 
-		return array_merge($statements, $database->getCommentedOutStatements(), $defaultData->getStatements());
+		return $defaultData->getStatements();
 	}
 
 	public function saveStructure($saveToDir = null, $tables = []) {

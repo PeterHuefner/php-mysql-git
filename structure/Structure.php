@@ -92,7 +92,6 @@ class Structure {
 					if ($tableFile[0] === "." || ($pathinfo['extension'] ?? '') !== 'php') {
 						continue;
 					}
-
 					$tableData = $this->incFile($this->path($this->directory, [$database, "data", $tableFile]));
 					if (is_array($tableData)) {
 						$data = array_merge($data, $tableData);
