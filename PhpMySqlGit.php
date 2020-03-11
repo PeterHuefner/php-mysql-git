@@ -402,6 +402,7 @@ class PhpMySqlGit {
 		}
 
 		$defaultData = new Configure\DefaultData($data, $this->dbname);
+		$defaultData->setForeignKeyChecks($this->foreignKeyChecksForData);
 
 		return $defaultData->getStatements();
 	}
