@@ -1,3 +1,6 @@
+# ignore test data dir
+test/data/*
+
 # https://github.com/github/gitignore/blob/master/Global/JetBrains.gitignore
 
 # User-specific stuff

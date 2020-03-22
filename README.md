@@ -18,13 +18,13 @@ or clone this repository.
 
  ## Usage
  
- if you haven't installed via composer you can require an extra autoloader through use it via ```require_once 'src/PhpMySqlGit/autoload.php';```.
+ If you haven't installed via composer you can require an extra autoloader for that purposes through ```require_once 'src/PhpMySqlGit/autoload.php';```.
  
  ### Basic Example
  ```php
  require_once 'PATH/TO/COMPOSER/vendor/autoload.php';
 
-$phpMySqlGit = new PhpMySqlGit([
+$phpMySqlGit = new PhpMySqlGit\PhpMySqlGit([
     'connectionString' => 'mysql:host=DATABASE-HOST;port=DATABASE-PORT;dbname=DATABASE-NAME',
 	'username'         => 'DATABASE-USERNAME',
 	'password'         => 'USER-PASSWORD',
@@ -50,14 +50,14 @@ echo(implode("\n\n", $phpMySqlGit->configureData($structureDirectory)));
 ```
  
 In the examples the SQL-Statements are always outputted and never executed directly.
-Although you could pass statements directly to an PDO-Instance, you should'nt do that.
-It is always better to review statements before execution and you should'nt give your webserver-user the rights to change the database structure.
+Although you could pass statements directly to an PDO-Instance, you should not do that.
+It is always better to review statements before execution and you should not give your webserver-user the rights to change the database structure.
  
- ### Example with some options
+ ### Example with options
  ```php
 require_once 'PATH/TO/COMPOSER/vendor/autoload.php';
 
-$phpMySqlGit = new PhpMySqlGit([
+$phpMySqlGit = new PhpMySqlGit\PhpMySqlGit([
     // specify the database name in the connection string
     //'connectionString' => 'mysql:host=DATABASE-HOST;port=DATABASE-PORT;dbname=DATABASE-NAME',
     // specify the database name later
@@ -72,13 +72,24 @@ $phpMySqlGit->setDbname("DATABASE-NAME");
 $structureDirectory = 'PATH/TO/DIRECTORY/WHERE/STRUCTURE/SHOULD/STORED';
 
 // if you want to ensure that a charset and collation is used globally ignoring the local used
-// these defaults are also availyble for engine and row format
 $phpMySqlGit->setOverwriteCharset(true);
 // utf8mb4 is the default, so there is no need to specify it again - just here to demonstrate
 $phpMySqlGit->setCharset('utf8mb4');
 $phpMySqlGit->setCollation('utf8mb4_unicode_ci');
 
+// these defaults are also available for engine and row format
+$phpMySqlGit->setRowFormat('DYNAMIC'); // DYNAMIC is the default
+$phpMySqlGit->setEngine('InnoDB');     // InnoDB is the default
+$phpMySqlGit->setOverwriteRowFormat(true);
+$phpMySqlGit->setOverwriteEngine(true);
+
+// when generating statements to change database, foreign keys are dropped before and created afterwards, to ensure the databse structure can be changed.
+// defaults to false
+// you should disable it only when you have a reason (for example a bug in php-mysql-git)
+$phpMySqlGit->setSkipForeignKeyChecks(true or false);
+
 // when using with data you can disable foreign key checks, but be careful it can damage the database when data is not consistent
+// this leads to the generation of the statement: SET FOREIGN_KEY_CHECKS = 0; so this is done in the database server
 $phpMySqlGit->setForeignKeyChecksForData(false);
 
 // and now the real stuff
@@ -99,5 +110,9 @@ echo(implode("\n\n", $phpMySqlGit->configureDatabase($structureDirectory)));
 
 // ouput the insert statements to the stored data
 echo(implode("\n\n", $phpMySqlGit->configureData($structureDirectory)));
-
 ```
+
+### storing multiple databases
+
+Generally you could repeat the process of storing one database multiple times. So storing database 'shop1' to directoy 'shop1' and so on.br
+With the setter setSaveNoDbName(false) you can store multiple databases in one directory. In which PhpMySqlGit will handle a sub-directory structure for each database.
