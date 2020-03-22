@@ -1,0 +1,21 @@
+{
+    "name": "peterhufner/php-mysql-git",
+    "description": "Stores SQL structure in PHP arrays that can be added to git, allowing you to configure the MySQL DB according to the stored structure.",
+    "type": "library",
+    "license": "GNU General Public License v3.0",
+    "authors": [
+        {
+            "name": "Peter Hüfner",
+            "email": "peterhuefner@icloud.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=7.2.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "PhpMySqlGit": "src/"
+        }
+    }
+}
