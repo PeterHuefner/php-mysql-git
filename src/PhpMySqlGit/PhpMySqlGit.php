@@ -393,7 +393,7 @@ class PhpMySqlGit {
 		return $this->dbStructure;
 	}
 
-	public function saveData($tables = [], $saveToDir = null) {
+	public function saveData($saveToDir = null, $tables = []) {
 		$data = $this->database->getData($tables);
 
 		if ($saveToDir) {
