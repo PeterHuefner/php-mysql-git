@@ -2,6 +2,8 @@
 
 namespace PhpMySqlGit;
 
+use PhpMySqlGit\Core\Exception;
+
 class PhpMySqlGit {
 
 	/**
@@ -311,6 +313,11 @@ class PhpMySqlGit {
 
 	#endregion
 
+	/**
+	 * PhpMySqlGit constructor.
+	 * @param array|\PDO $dbConnection
+	 * @throws Exception
+	 */
 	function __construct($dbConnection) {
 		if (is_array($dbConnection) && !empty($dbConnection['connectionString'])) {
 			$matches = [];
@@ -321,6 +328,8 @@ class PhpMySqlGit {
 			$this->database = new SqlConnection($dbConnection['connectionString'], $dbConnection['username'] ?? null, $dbConnection['password'] ?? null, $this->dbname);
 		} else if ($dbConnection instanceof \PDO) {
 			$this->database = new SqlConnection($dbConnection);
+		} else {
+			throw new Exception('invalid arguments passed. $dbConnection must be an array with key "connectionString" or a PDO instance');
 		}
 
 		self::$instance = $this;

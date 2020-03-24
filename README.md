@@ -1,6 +1,10 @@
 # php-mysql-git
 Stores SQL structure in PHP arrays that can be added to git, allowing you to configure the MySQL DB according to the stored structure.
 
+# searching for beta testers
+
+php-mysql-git is currently in beta status. If you want to support beta testing install and use the tool in a dev environement and report any bugs with the issue tracker. 
+
 ## How it works
 1. Your current MySQL/mariaDB Database (Tables, Columns and Data you choose) is stored in arrays in PHP-Files in a directory.
 2. These files can be put under version control and checked out on another machine.
@@ -112,7 +116,41 @@ echo(implode("\n\n", $phpMySqlGit->configureDatabase($structureDirectory)));
 echo(implode("\n\n", $phpMySqlGit->configureData($structureDirectory)));
 ```
 
+### Construct with a PDO Instance
+
+Instead of call the PhpMySqlGit-Class with an array, you can pass an instance of PDO-Class directly.
+
+```php
+$phpMySqlGit = new PhpMySqlGit\PhpMySqlGit(new PDO("mysql:host=DATABASE-HOST;port=DATABASE-PORT;", "DATABASE-USER"));
+```
+ 
+ With this technique you can specify some extra settings.
+
 ### storing multiple databases
 
-Generally you could repeat the process of storing one database multiple times. So storing database 'shop1' to directoy 'shop1' and so on.br
-With the setter setSaveNoDbName(false) you can store multiple databases in one directory. In which PhpMySqlGit will handle a sub-directory structure for each database.
+Generally you could repeat the process of storing one database multiple times. So storing database 'shop1' to directoy 'shop1' and so on.<br>
+With the setter `$phpMySqlGit->setSaveNoDbName(false)` you can store multiple databases in one directory. In which PhpMySqlGit will handle a sub-directory structure for each database.
+You have to repeat the save and configuration process for each database, the only advantage is that you do not have to worry about the directory structure.<br>
+In this case the database names saved in structure and in database-server must be equal. With `$phpMySqlGit->setDbname("DATABASE-NAME");` you just pick a database from the 'pool' in the directory.
+
+When you want to store multiple databases and database-names vary on the used servers, you have to use a own seperate directory for each database.
+
+## Compatibility
+
+### Database-Server
+
+php-mysql-git should be compatible with recent MySQL and mariaDB versions. If you encounter a non-compatibility please open an issue.
+
+### PHP
+
+\>= PHP 7.2
+
+### Dependencies
+
+Only basic PHP librarys are needed. PDO must be enabled, which should be standard. 
+
+## Limitations
+
+SQL-Functions, Stored-Procedures, Views, Triggers and Events are not handled at the moment.
+
+Only Tables and Columns are stored and can be configured.
