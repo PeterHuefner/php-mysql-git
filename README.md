@@ -62,6 +62,9 @@ Although you could pass statements directly to an PDO-Instance, you should not d
 It is always better to review statements before execution and you should not give your webserver-user the rights to change the database structure.
  
  ### Example with options
+ 
+ In this example are nearly all possible options shown.
+ 
  ```php
 require_once 'PATH/TO/COMPOSER/vendor/autoload.php';
 
@@ -88,8 +91,8 @@ $phpMySqlGit->setCollation('utf8mb4_unicode_ci');
 // these defaults are also available for engine and row format
 $phpMySqlGit->setRowFormat('DYNAMIC'); // DYNAMIC is the default
 $phpMySqlGit->setEngine('InnoDB');     // InnoDB is the default
-$phpMySqlGit->setOverwriteRowFormat(true);
-$phpMySqlGit->setOverwriteEngine(true);
+$phpMySqlGit->setOverwriteRowFormat(true); //false is default
+$phpMySqlGit->setOverwriteEngine(true); // false is default
 
 // when generating statements to change database, foreign keys are dropped before and created afterwards, to ensure the databse structure can be changed.
 // defaults to false
@@ -99,6 +102,12 @@ $phpMySqlGit->setSkipForeignKeyChecks(true or false);
 // when using with data you can disable foreign key checks, but be careful it can damage the database when data is not consistent
 // this leads to the generation of the statement: SET FOREIGN_KEY_CHECKS = 0; so this is done in the database server
 $phpMySqlGit->setForeignKeyChecksForData(false);
+
+// mod to create files with
+$phpMySqlGit->setFileMod('0664'); //default
+
+// mod to create directories with
+$phpMySqlGit->setDirMod('0775'); //default
 
 // and now the real stuff
 // save the structure of the current database to a directory
