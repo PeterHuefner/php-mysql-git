@@ -131,7 +131,7 @@ echo(implode("\n\n", $phpMySqlGit->configureData($structureDirectory)));
 
 ### Construct with a PDO Instance
 
-Instead of call the PhpMySqlGit-Class with an array, you can pass an instance of PDO-Class directly.
+Instead of call the PhpMySqlGit-Class with an array, you can pass an instance of PDO-Class directly. 
 
 ```php
 $phpMySqlGit = new PhpMySqlGit\PhpMySqlGit(new PDO("mysql:host=DATABASE-HOST;port=DATABASE-PORT;", "DATABASE-USER"));
@@ -147,6 +147,12 @@ You have to repeat the save and configuration process for each database, the onl
 In this case the database names saved in structure and in database-server must be equal. With `$phpMySqlGit->setDbname("DATABASE-NAME");` you just pick a database from the 'pool' in the directory.
 
 When you want to store multiple databases and database-names vary on the used servers, you have to use a own seperate directory for each database.
+
+### Configure remote/production server
+
+When updating a production server, you may want to update the database schema before updating the running code. With this process you can minimize downtimes.
+To achieve this, you could checkout the new structure on a non-production machine and connect from there via port forwarding to the production database.
+Then you can change the production schema without changing the running code. The code can be updated afterwards.
 
 ## Compatibility
 
