@@ -122,6 +122,20 @@ $phpMySqlGit->saveData($structureDirectory, [
 	'ANOTHER_TABLE'
 ]);
 
+// save data but exclude columns
+// if you call saveData with an array as third argument, you can exclude columns
+// an element in that array with an integer as key is an exclude for all tables
+// an element with tablename as key and value as column or an array of columns exclude only for that table
+$phpMySqlGit->saveData(
+    $structureDirectory,
+    [], // meaning all tables
+    [
+        'uid',                                        // exclude the column uid for all tables
+        'TABLE_NAME' => ['lastUpdate', 'createDate'], // exclude two columns for specific table
+        'ANOTHER_TABLE' => 'status',                  // exclude one column for specific table
+    ]
+);
+
 // ouput all statements that are necessary to change the database according to stored structure
 echo(implode("\n\n", $phpMySqlGit->configureDatabase($structureDirectory)));
 

@@ -402,8 +402,32 @@ class PhpMySqlGit {
 		return $this->dbStructure;
 	}
 
-	public function saveData($saveToDir = null, $tables = []) {
+	public function saveData($saveToDir = null, $tables = [], $skipColumns = []) {
 		$data = $this->database->getData($tables);
+
+		if ($skipColumns) {
+			foreach ($data as $table => $rows) {
+				$columsToDelete = [];
+
+				foreach ($skipColumns as $key => $skipColumnData) {
+					if (is_int($key)) {
+						$columsToDelete[] = $skipColumnData;
+					} elseif (is_string($key) && strtolower($key) == strtolower($table)) {
+						if (!is_array($skipColumnData)) {
+							$skipColumnData = [$skipColumnData];
+						}
+
+						$columsToDelete = array_merge($columsToDelete, $skipColumnData);
+					}
+
+					foreach ($rows as $index => $row) {
+						foreach ($columsToDelete as $column) {
+							unset($data[$table][$index][$column]);
+						}
+					}
+				}
+			}
+		}
 
 		if ($saveToDir) {
 			$structure = new Structure\Structure($saveToDir);
