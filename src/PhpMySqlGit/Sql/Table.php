@@ -5,6 +5,7 @@ namespace PhpMysSqlGit\Sql;
 
 
 use PhpMySqlGit\Configure\Columns;
+use PhpMySqlGit\PhpMySqlGit;
 
 class Table {
 	use SQLObject;
@@ -46,34 +47,34 @@ class Table {
 		}
 
 		if ($setTableOptions) {
-			$options = $this->tableOptions();
+			$statement = "ALTER TABLE `{$this->name}` ".$this->tableOptions().";\n";
 		}
 
 		if ($cols || $options) {
-			$statement = "ALTER TABLE `{$this->name}` $cols $options ;";
+			$statement .= "ALTER TABLE `{$this->name}` $cols;";
 		}
 
 		return $statement;
 	}
 
 	public function engine() {
-		return "ENGINE = {$this->definition["engine"]}";
+		return PhpMySqlGit::$instance->isIgnoreEngine() ? "" : "ENGINE = {$this->definition["engine"]}";
 	}
 
 	public function rowFormat() {
-		return "ROW_FORMAT = {$this->definition["row_format"]}";
+		return PhpMySqlGit::$instance->isIgnoreRowFormat() ? "" : "ROW_FORMAT = {$this->definition["row_format"]}";
 	}
 
 	public function characterSet() {
-		return "CHARACTER SET = {$this->getCharacterSetFromCollation($this->definition["collation"])}";
+		return PhpMySqlGit::$instance->isIgnoreCharset() ? "" : "CHARACTER SET = {$this->getCharacterSetFromCollation($this->definition["collation"])}";
 	}
 
 	public function collation() {
-		return "COLLATE = {$this->definition["collation"]}";
+		return PhpMySqlGit::$instance->isIgnoreCharset() ? "" : "COLLATE = {$this->definition["collation"]}";
 	}
 
 	public function comment() {
-		return ($this->definition["comment"] ? "COMMENT = ".\PhpMySqlGit\PhpMySqlGit::$instance->escape($this->definition["comment"]) : "");
+		return ($this->definition["comment"] ? "COMMENT = ".PhpMySqlGit::$instance->escape($this->definition["comment"]) : "");
 	}
 
 	public function tableOptions() {

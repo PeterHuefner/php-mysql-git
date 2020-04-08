@@ -37,6 +37,13 @@ class Database {
 	}
 
 	protected function configureDatabase() {
+		$ignoreKeys = [];
+
+		if (PhpMySqlGit::$instance->isIgnoreCharset()) {
+			$ignoreKeys[] = "DEFAULT_CHARACTER_SET_NAME";
+			$ignoreKeys[] = "DEFAULT_COLLATION_NAME";
+		}
+
 		if (!empty($this->dbStructure["databases"][$this->database])) {
 			foreach ($this->dbStructure["databases"][$this->database] as $config => $value) {
 				if ($config === "tables") {
@@ -45,7 +52,7 @@ class Database {
 					&& array_key_exists($config, $this->fileStructure["databases"][$this->database])
 					&& strtolower($value) !== strtolower($this->fileStructure["databases"][$this->database][$config])
 				) {
-					$this->statements[]                                                    = $this->getDb()->alter();
+					$this->statements[]                                                    = $this->getDb($this->fileStructure["databases"][$this->database])->alter();
 					PhpMySqlGit::$changedObjects["databases"][$this->database]["database"] = true;
 					break;
 				}
@@ -58,11 +65,12 @@ class Database {
 		}
 	}
 
-	protected function getDb() {
+	protected function getDb($settings) {
 		$db            = new \PhpMysSqlGit\Sql\Database();
 		$db->name      = PhpMySqlGit::$instance->getDbname();
-		$db->charset   = PhpMySqlGit::$instance->getCharset();
-		$db->collation = PhpMySqlGit::$instance->getCollation();
+
+		$db->charset   = PhpMySqlGit::$instance->isOverwriteCharset() ? PhpMySqlGit::$instance->getCharset() : $settings["DEFAULT_CHARACTER_SET_NAME"];
+		$db->collation = PhpMySqlGit::$instance->isOverwriteCharset() ? PhpMySqlGit::$instance->getCollation() : $settings["DEFAULT_COLLATION_NAME"];
 
 		return $db;
 	}

@@ -109,6 +109,27 @@ class PhpMySqlGit {
 	protected $overwriteRowFormat = false;
 
 	/**
+	 * ignores engine completly, so no alter or create statement will contain the specification of engine
+	 *
+	 * @var bool
+	 */
+	protected $ignoreEngine = false;
+
+	/**
+	 * ignores row format completely, so no alter or create statement will contain the specification of row format
+	 *
+	 * @var bool
+	 */
+	protected $ignoreRowFormat = false;
+
+	/**
+	 * ignores charset completely, alter or create statement (for database, table and column) will contain the specification of charset
+	 *
+	 * @var bool
+	 */
+	protected $ignoreCharset = false;
+
+	/**
 	 * Defaults to true.
 	 * If true the database name is not saved in structure and has to be given when constructing the class within the
 	 * PDO connection string or right before any database transaction with {@link self::setDbname()} setDbname
@@ -311,6 +332,48 @@ class PhpMySqlGit {
 		$this->foreignKeyChecksForData = $foreignKeyChecksForData;
 	}
 
+	/**
+	 * @param bool $ignoreCharset
+	 */
+	public function setIgnoreCharset(bool $ignoreCharset): void {
+		$this->ignoreCharset = $ignoreCharset;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isIgnoreCharset(): bool {
+		return $this->ignoreCharset;
+	}
+
+	/**
+	 * @param bool $ignoreEngine
+	 */
+	public function setIgnoreEngine(bool $ignoreEngine): void {
+		$this->ignoreEngine = $ignoreEngine;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isIgnoreEngine(): bool {
+		return $this->ignoreEngine;
+	}
+
+	/**
+	 * @param bool $ignoreRowFormat
+	 */
+	public function setIgnoreRowFormat(bool $ignoreRowFormat): void {
+		$this->ignoreRowFormat = $ignoreRowFormat;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isIgnoreRowFormat(): bool {
+		return $this->ignoreRowFormat;
+	}
+
 	#endregion
 
 	/**
@@ -352,6 +415,7 @@ class PhpMySqlGit {
 	 * @throws Core\Exception
 	 */
 	public function configureDatabase($structureSource) {
+		$this->database->setUseOverwrites(false);
 		$this->dbStructure = $this->database->readDbStructure();
 		if (is_string($structureSource)) {
 			$structure = new Structure\Structure($structureSource);
@@ -392,6 +456,7 @@ class PhpMySqlGit {
 	}
 
 	public function saveStructure($saveToDir = null, $tables = []) {
+		$this->database->setUseOverwrites(true);
 		$this->dbStructure = $this->database->readDbStructure();
 
 		if ($saveToDir) {

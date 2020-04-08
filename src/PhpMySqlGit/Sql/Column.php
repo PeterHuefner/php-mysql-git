@@ -4,6 +4,8 @@
 namespace PhpMysSqlGit\Sql;
 
 
+use PhpMySqlGit\PhpMySqlGit;
+
 class Column {
 	use SQLObject;
 	
@@ -76,7 +78,7 @@ class Column {
 			$sql .= " CHARACTER SET {$this->definition["character_set"]}";
 		}*/
 
-		if ($this->definition["collation"]) {
+		if ($this->definition["collation"] && !PhpMySqlGit::$instance->isIgnoreCharset()) {
 			$sql .= " COLLATE {$this->definition["collation"]}";
 		}
 

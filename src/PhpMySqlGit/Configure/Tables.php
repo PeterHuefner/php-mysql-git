@@ -70,6 +70,14 @@ class Tables {
 	}
 
 	protected function checkTableSetting($setting, $ignoreCase = true) {
+		if (
+			(PhpMySqlGit::$instance->isIgnoreEngine() && $setting === 'engine') ||
+			(PhpMySqlGit::$instance->isIgnoreRowFormat() && $setting === 'row_format') ||
+			(PhpMySqlGit::$instance->isIgnoreCharset() && $setting === 'collation')
+		) {
+			return true;
+		}
+
 		$dbSetting   = &$this->dbStructure["databases"][$this->database]['tables'][$this->currentTable][$setting];
 		$fileSetting = &$this->fileStructure["databases"][$this->database]['tables'][$this->currentTable][$setting];
 

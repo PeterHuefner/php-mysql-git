@@ -166,6 +166,10 @@ class Columns {
 		$columnCorrect = true;
 
 		foreach ($dbColSettings as $settingName => $settingValue) {
+			if (PhpMySqlGit::$instance->isIgnoreCharset() && in_array($settingName, ['collation', 'character_set'])) {
+				continue;
+			}
+
 			if ($settingValue !== $fileColSettings[$settingName]) {
 				$columnCorrect = false;
 				break;

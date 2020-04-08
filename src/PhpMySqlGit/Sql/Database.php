@@ -2,7 +2,7 @@
 
 
 namespace PhpMysSqlGit\Sql;
-
+use PhpMySqlGit\PhpMySqlGit;
 
 class Database {
 
@@ -12,7 +12,13 @@ class Database {
 
 
 	public function create() {
-		return "CREATE DATABASE IF NOT EXISTS `$this->name` CHARACTER SET $this->charset COLLATE $this->collation;";
+		$charsetSql = "";
+
+		if (!PhpMySqlGit::$instance->isIgnoreCharset()) {
+			$charsetSql = " CHARACTER SET $this->charset COLLATE $this->collation";
+		}
+
+		return "CREATE DATABASE IF NOT EXISTS `$this->name`{$charsetSql};";
 	}
 
 	public function alter() {

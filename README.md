@@ -94,6 +94,11 @@ $phpMySqlGit->setEngine('InnoDB');     // InnoDB is the default
 $phpMySqlGit->setOverwriteRowFormat(true); //false is default
 $phpMySqlGit->setOverwriteEngine(true); // false is default
 
+// you also can omit charset, engine and row format - so ignore the checking completly
+$phpMySqlGit->setIgnoreCharset(true);
+$phpMySqlGit->setIgnoreEngine(true);
+$phpMySqlGit->setIgnoreRowFormat(true);
+
 // when generating statements to change database, foreign keys are dropped before and created afterwards, to ensure the databse structure can be changed.
 // defaults to false
 // you should disable it only when you have a reason (for example a bug in php-mysql-git)
@@ -161,6 +166,29 @@ You have to repeat the save and configuration process for each database, the onl
 In this case the database names saved in structure and in database-server must be equal. With `$phpMySqlGit->setDbname("DATABASE-NAME");` you just pick a database from the 'pool' in the directory.
 
 When you want to store multiple databases and database-names vary on the used servers, you have to use a own seperate directory for each database.
+
+### Ensure that your defaults are applied
+
+You can specify defaults for charset, collation, engine and row format with the setter for each of them.
+You have to enable the overwriting of these settings with the `setOverwrite`...-Function.
+When the default setting and overwriting is enabled, it will be used when saving the structure to a file and when configuring the database from a stored structure.
+This means that, with overwritng enabled, the setting stored to file is not used from your database, but from the default setting. And also when configuring the database from a stored structure.
+
+Using the default setting and overwriting you can ensure, that every configuration process will result in a checking and correction of the specified setting.
+
+#### Example
+```php
+$phpMySqlGit = new PhpMySqlGit\PhpMySqlGit(...);
+$phpMySqlGit->setCharset('my_everywhere_wanted_charset');
+$phpMySqlGit->setCollation('my_everywhere_wanted_collation');
+$phpMySqlGit->setOverwriteCharset(true);
+
+$phpMySqlGit->saveStructure(...); // will store your defined charset and collation, but not that from your used database
+
+$phpMySqlGit->configureDatabase(...); // will check and change database, tables, columns to your defined charset, regardless which charset you have stored in structure
+```
+
+Be careful with the defaults, it may change columns and tables you actually dont want to change. 
 
 ### Configure remote/production server
 

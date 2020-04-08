@@ -11,6 +11,8 @@ class SqlConnection {
 	protected $structure = [];
 	protected $database;
 
+	protected $useOverwrites = false;
+
 	/**
 	 * SqlConnection constructor.
 	 * @param string|\PDO $pdoString
@@ -33,6 +35,20 @@ class SqlConnection {
 	 */
 	public function setDatabase($database): void {
 		$this->database = $database;
+	}
+
+	/**
+	 * @param bool $useOverwrites
+	 */
+	public function setUseOverwrites(bool $useOverwrites): void {
+		$this->useOverwrites = $useOverwrites;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isUseOverwrites(): bool {
+		return $this->useOverwrites;
 	}
 
 	public function escape($string) {
@@ -70,7 +86,7 @@ class SqlConnection {
 				$this->useDatabase();
 				$this->structure["databases"][$this->database] = $dbStructure;
 
-				if (PhpMySqlGit::$instance->isOverwriteCharset()) {
+				if ($this->useOverwrites && PhpMySqlGit::$instance->isOverwriteCharset()) {
 					$this->structure["databases"][$this->database]['DEFAULT_CHARACTER_SET_NAME'] = PhpMySqlGit::$instance->getCharset();
 					$this->structure["databases"][$this->database]['DEFAULT_COLLATION_NAME']     = PhpMySqlGit::$instance->getCollation();
 				}
@@ -121,9 +137,9 @@ class SqlConnection {
 		$sql = "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = :database AND TABLE_TYPE = 'BASE TABLE';";
 		foreach ($this->query($sql, [":database" => $this->database]) as $table) {
 			$this->structure["databases"][$this->database]["tables"][$table["TABLE_NAME"]] = [
-				"engine"     => PhpMySqlGit::$instance->isOverwriteEngine() ? PhpMySqlGit::$instance->getEngine() : $table["ENGINE"],
-				"row_format" => PhpMySqlGit::$instance->isOverwriteRowFormat() ? PhpMySqlGit::$instance->getRowFormat() : $table["ROW_FORMAT"],
-				"collation"  => PhpMySqlGit::$instance->isOverwriteCharset() ? PhpMySqlGit::$instance->getCollation() : $table["TABLE_COLLATION"],
+				"engine"     => PhpMySqlGit::$instance->isOverwriteEngine() && $this->useOverwrites ? PhpMySqlGit::$instance->getEngine() : $table["ENGINE"],
+				"row_format" => PhpMySqlGit::$instance->isOverwriteRowFormat() && $this->useOverwrites ? PhpMySqlGit::$instance->getRowFormat() : $table["ROW_FORMAT"],
+				"collation"  => PhpMySqlGit::$instance->isOverwriteCharset() && $this->useOverwrites ? PhpMySqlGit::$instance->getCollation() : $table["TABLE_COLLATION"],
 				"comment"    => $table["TABLE_COMMENT"] ?? '',
 			];
 		}
@@ -140,8 +156,8 @@ class SqlConnection {
 					"type"           => $column["DATA_TYPE"],
 					"column_type"    => $column["COLUMN_TYPE"],
 					"length"         => ($column["CHARACTER_MAXIMUM_LENGTH"] ?? $column["NUMERIC_PRECISION"].($column["NUMERIC_SCALE"] != 0 ? ",".$column["NUMERIC_SCALE"] : "")),
-					"character_set"  => $column["CHARACTER_SET_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() ? PhpMySqlGit::$instance->getCharset() : $column["CHARACTER_SET_NAME"],
-					"collation"      => $column["COLLATION_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() ? PhpMySqlGit::$instance->getCollation() : $column["COLLATION_NAME"],
+					"character_set"  => $column["CHARACTER_SET_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() && $this->useOverwrites ? PhpMySqlGit::$instance->getCharset() : $column["CHARACTER_SET_NAME"],
+					"collation"      => $column["COLLATION_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() && $this->useOverwrites ? PhpMySqlGit::$instance->getCollation() : $column["COLLATION_NAME"],
 					"auto_increment" => $column["EXTRA"] === "auto_increment",
 					"comment"        => $column["COLUMN_COMMENT"],
 					"on_update"      => stripos($column["EXTRA"], "on update") !== false,
