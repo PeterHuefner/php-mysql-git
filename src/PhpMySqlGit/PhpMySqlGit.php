@@ -148,6 +148,8 @@ class PhpMySqlGit {
 	protected $foreignKeyChecksForData = true;
 
 	/**
+	 * Gets the current used datebase name
+	 *
 	 * @return string
 	 */
 	public function getDbname() {
@@ -155,6 +157,9 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Sets the name of the database to use
+	 * if not explicit called, it can be provided also in the connectionString of the class constructor
+	 *
 	 * @param string $dbname
 	 */
 	public function setDbname($dbname): void {
@@ -165,6 +170,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Gets the Default Charset for all tables and columns
+	 *
 	 * @return string
 	 */
 	public function getCharset(): string {
@@ -172,6 +179,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Sets the Default Charset for all tables and columns
+	 *
 	 * @param string $charset
 	 */
 	public function setCharset(string $charset): void {
@@ -179,6 +188,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Gets the Default Collation for all tables and columns
+	 *
 	 * @return string
 	 */
 	public function getCollation(): string {
@@ -186,6 +197,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Sets the Default Collation for all tables and columns
+	 *
 	 * @param string $collation
 	 */
 	public function setCollation(string $collation): void {
@@ -193,6 +206,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Gets the default engine to use in create statements
+	 *
 	 * @return string
 	 */
 	public function getEngine(): string {
@@ -200,6 +215,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Sets the default engine to use
+	 *
 	 * @param string $engine
 	 */
 	public function setEngine(string $engine): void {
@@ -207,6 +224,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Gets the default row format
+	 *
 	 * @return string
 	 */
 	public function getRowFormat(): string {
@@ -214,6 +233,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * sets the default row format
+	 *
 	 * @param string $rowFormat
 	 */
 	public function setRowFormat(string $rowFormat): void {
@@ -221,6 +242,13 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * sets if foreign key checks should be done
+	 * When set to true, the configureDatabase-function will check foreign keys while altering the database.
+	 * Every affected foreign key by a alter or create statement will be dropped (a drop statement is created automatically).
+	 * At the end of statements, the dropped foreign keys are recreated.
+	 *
+	 * This Option does not set the FOREIGN_KEY_CHECKS-Server-Variable
+	 *
 	 * @param bool $skipForeignKeyChecks
 	 */
 	public function setSkipForeignKeyChecks(bool $skipForeignKeyChecks): void {
@@ -228,6 +256,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Returns true if foreign key checks are on
+	 *
 	 * @return bool
 	 */
 	public function isSkipForeignKeyChecks(): bool {
@@ -235,6 +265,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Set the numeric file permission for created files in the structure dir
+	 *
 	 * @param string $fileMod
 	 */
 	public function setFileMod(string $fileMod): void {
@@ -242,6 +274,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Get the numeric file permission for created files
+	 *
 	 * @return string
 	 */
 	public function getFileMod(): string {
@@ -249,6 +283,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Sets the numeric permission for directories in the strcuture dir
+	 *
 	 * @param string $dirMod
 	 */
 	public function setDirMod(string $dirMod): void {
@@ -256,6 +292,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * gets the numeric permission for directories in the strcuture dir
+	 *
 	 * @return string
 	 */
 	public function getDirMod(): string {
@@ -263,41 +301,57 @@ class PhpMySqlGit {
 	}
 
 	/**
-	 * @param mixed $overwriteCharset
+	 * Enables or Disables the overwriting of Charset.
+	 * When enabled the charset defined in {@link PhpMySqlGit::setCharset()} and {@link PhpMySqlGit::setCollation()} will be saved and configured, regardless of which charset is defined in database or saved structure.
+	 * This is a good way to ensure that all used databses have the same charset and collation.
+	 *
+	 * @param bool $overwriteCharset
 	 */
-	public function setOverwriteCharset($overwriteCharset): void {
+	public function setOverwriteCharset(bool $overwriteCharset): void {
 		$this->overwriteCharset = $overwriteCharset;
 	}
 
 	/**
-	 * @return mixed
+	 * Returns true if charset will be overwritten to the previous defined
+	 *
+	 * @return bool
 	 */
 	public function isOverwriteCharset() {
 		return $this->overwriteCharset;
 	}
 
 	/**
-	 * @param mixed $overwriteEngine
+	 * Enables or Disables the overwriting of Engine.
+	 * When enabled the engine defined in {@link PhpMySqlGit::setEngine()} will be saved and configured, regardless of which engine is defined in database or saved structure.
+	 *
+	 * @param bool $overwriteEngine
 	 */
-	public function setOverwriteEngine($overwriteEngine): void {
+	public function setOverwriteEngine(bool $overwriteEngine): void {
 		$this->overwriteEngine = $overwriteEngine;
 	}
 
 	/**
-	 * @return mixed
+	 * Returns true if engine overwriting is enabled
+	 *
+	 * @return bool
 	 */
 	public function isOverwriteEngine() {
 		return $this->overwriteEngine;
 	}
 
 	/**
-	 * @param mixed $overwriteRowFormat
+	 * Enables or Disables the overwriting of row format.
+	 * When enabled the row format defined in {@link PhpMySqlGit::setRowFormat()} will be saved and configured, regardless of which row format is defined in database or saved structure.
+	 *
+	 * @param bool $overwriteRowFormat
 	 */
-	public function setOverwriteRowFormat($overwriteRowFormat): void {
+	public function setOverwriteRowFormat(bool $overwriteRowFormat): void {
 		$this->overwriteRowFormat = $overwriteRowFormat;
 	}
 
 	/**
+	 * Returns true if overwriting of row format is enabled
+	 *
 	 * @return mixed
 	 */
 	public function isOverwriteRowFormat() {
@@ -305,6 +359,12 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Enables or Disables the storing of the name of database in the saved structure.
+	 * When enabled the name of database will not be stored in the stucture files.
+	 *
+	 * So you can save the structure based on a database called 'client_dev'. With that saved structure, you can configure another database called 'client_live'.
+	 * You only have to call setDbName to set the current name.
+	 *
 	 * @param bool $saveNoDbName
 	 */
 	public function setSaveNoDbName(bool $saveNoDbName): void {
@@ -312,6 +372,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Returns true if the database name will not be stored in saved structure.
+	 *
 	 * @return bool
 	 */
 	public function isSaveNoDbName(): bool {
@@ -326,6 +388,9 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Sets FOREIGN_KEY_CHECKS according to true or false when {@link PhpMySqlGit::configureData()} configureData.
+	 * Defaults to true.
+	 *
 	 * @param bool $foreignKeyChecksForData
 	 */
 	public function setForeignKeyChecksForData(bool $foreignKeyChecksForData): void {
@@ -333,6 +398,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * When true the charset is not checkd and changed while {@link PhpMySqlGit::configureDatabase()} configureDatabase
+	 *
 	 * @param bool $ignoreCharset
 	 */
 	public function setIgnoreCharset(bool $ignoreCharset): void {
@@ -340,6 +407,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Returns true if charset is not checked during {@link PhpMySqlGit::configureDatabase()} configureDatabase
+	 *
 	 * @return bool
 	 */
 	public function isIgnoreCharset(): bool {
@@ -347,6 +416,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * When true the engine is not checkd and changed while {@link PhpMySqlGit::configureDatabase()} configureDatabase
+	 *
 	 * @param bool $ignoreEngine
 	 */
 	public function setIgnoreEngine(bool $ignoreEngine): void {
@@ -354,6 +425,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Returns true if engine is not checked during {@link PhpMySqlGit::configureDatabase()} configureDatabase
+	 *
 	 * @return bool
 	 */
 	public function isIgnoreEngine(): bool {
@@ -361,6 +434,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * When true the row format is not checkd and changed while {@link PhpMySqlGit::configureDatabase()} configureDatabase
+	 *
 	 * @param bool $ignoreRowFormat
 	 */
 	public function setIgnoreRowFormat(bool $ignoreRowFormat): void {
@@ -368,6 +443,8 @@ class PhpMySqlGit {
 	}
 
 	/**
+	 * Returns true if row format is not checked during {@link PhpMySqlGit::configureDatabase()} configureDatabase
+	 *
 	 * @return bool
 	 */
 	public function isIgnoreRowFormat(): bool {
@@ -377,7 +454,12 @@ class PhpMySqlGit {
 	#endregion
 
 	/**
-	 * PhpMySqlGit constructor.
+	 *
+	 * provide a PDO Instance which should be used for database communication or
+	 * provide an array with at least the key 'connectionString' which you would provide to PDO.
+	 *
+	 * username and password in the array are optional.
+	 *
 	 * @param array|\PDO $dbConnection
 	 * @throws Exception
 	 */
@@ -455,6 +537,16 @@ class PhpMySqlGit {
 		return $defaultData->getStatements();
 	}
 
+	/**
+	 * Returns and stores the database structure.
+	 * If $saveToDir is a string it is used as path where the structure is stored in php-files.
+	 * If $tables is an array with entries, only the given table names are stored.
+	 *
+	 * @param null|string $saveToDir
+	 * @param array $tables
+	 * @return array
+	 * @throws Exception
+	 */
 	public function saveStructure($saveToDir = null, $tables = []) {
 		$this->database->setUseOverwrites(true);
 		$this->dbStructure = $this->database->readDbStructure();
@@ -467,6 +559,28 @@ class PhpMySqlGit {
 		return $this->dbStructure;
 	}
 
+	/**
+	 * Returns and stores the data of database.
+	 * if $saveToDir is a string it is used as path where the data is stored in php-files.
+	 * If $tables is an array, only data of that table names is stored.
+	 *
+	 * If $skipColumns is an array, the names of that columns are used to not store the data of that columns.
+	 * If the key of an entry is numeric, the column is blacklisted for all tables.
+	 * If the key is a string, it is treated as a table name and the specified columns in that associative array are only blacklisted for that column.
+	 * For example:
+	 *
+	 * [
+	 * 'name', // for all tables blacklisted
+	 * 'language' => ['language_id'], // blacklisted only fot the table 'language'
+	 * 'category' => 'last_update' // blacklisted only fot the table 'category'
+	 * ]
+	 *
+	 * @param null|string $saveToDir
+	 * @param array $tables
+	 * @param array $skipColumns
+	 * @return array
+	 * @throws Exception
+	 */
 	public function saveData($saveToDir = null, $tables = [], $skipColumns = []) {
 		$data = $this->database->getData($tables);
 

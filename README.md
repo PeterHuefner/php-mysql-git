@@ -190,6 +190,47 @@ $phpMySqlGit->configureDatabase(...); // will check and change database, tables,
 
 Be careful with the defaults, it may change columns and tables you actually dont want to change. 
 
+#### CLI Example
+A simple Class "CommandLineInterface" is shipped with the package. The Class collects CLI-Args and passes them to main PhpMySqlGit-Class.
+Every CLI-Arg starting with `set` and is a method of PhpMySqlGit is called with the provied value.
+In your php-File you can create and prepare a PhpMySqlGit-Instance with some defaults, so you do not have to call every Setter each time.
+The CommandLineInterface-Class has special interpretation of the array-keys of the first arg of the PhpMySqlGit-Constructor. So you can pass --connectionString, --username, --password as CLI-Args. 
+
+All you have to do, is to create a php-File which is calling the CommanLineInterface-Class.
+For example a cli.php:
+```php
+<?php
+
+// only allow access through command line
+if (php_sapi_name() !== "cli") {
+	exit();
+}
+require_once 'PATH/TO/vendor/autoload.php';
+
+// optionally you can provide a prepared and connected PhpMySqlGit-Instance in the Constructor
+$cli = new \PhpMySqlGit\CommandLineInterface();
+
+// optional path to structure, when provided it will overwrite any delcaration in the CLI-Call
+$cli->setDataDir('PATH/TO/STRUCTUREDIR');
+
+$cli->execute();
+```
+
+Then you can call the cli.php as follows:
+```shell script
+# data dir defined in cli.php
+php cli.php --connectionString="mysql:host=127.0.0.1;port=3306;" --username=demouser --setOverwriteCharset=true --setDbName=sakila --saveStructure
+
+# data dir defined in cli.php, but call extra args on saveData
+php cli.php --connectionString="mysql:host=127.0.0.1;port=3306;" --username=demouser --setOverwriteCharset=true --setDbName=sakila --saveStructure --saveData='[null,["film", "film_actor"]]'
+
+# provide path to strcuture dir inline
+php cli.php --connectionString="mysql:host=127.0.0.1;port=3306;" --username=demouser --setOverwriteCharset=true --setDbName=sakila --saveStructure --saveData='["/PATH/TO/STRUCTUREDIR",["film", "film_actor"]]'
+
+# use a prepared PhpMySqlGit-Instance and a default strcuture path, what means less args in CLI-Call
+php cli.php --setDbName=sakila --saveStructure --saveData='[null,["film", "film_actor"]]'
+```
+
 ### Configure remote/production server
 
 When updating a production server, you may want to update the database schema before updating the running code. With this process you can minimize downtimes.
