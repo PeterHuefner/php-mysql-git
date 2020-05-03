@@ -134,6 +134,8 @@ class SqlConnection {
 	}
 
 	protected function getTables() {
+		$this->structure["databases"][$this->database]["tables"] = [];
+
 		$sql = "SELECT * FROM information_schema.TABLES WHERE TABLE_SCHEMA = :database AND TABLE_TYPE = 'BASE TABLE';";
 		foreach ($this->query($sql, [":database" => $this->database]) as $table) {
 			$this->structure["databases"][$this->database]["tables"][$table["TABLE_NAME"]] = [
@@ -146,75 +148,81 @@ class SqlConnection {
 	}
 
 	protected function getColumns() {
-		foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
-			$sql = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table ORDER BY ORDINAL_POSITION;";
-			foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $column) {
-				$columnDefinition = [
-					"name"           => $column["COLUMN_NAME"],
-					"default"        => $this->getColumnDefault($column["COLUMN_DEFAULT"]),
-					"nullable"       => $column["IS_NULLABLE"] == "NO" ? false : true,
-					"type"           => $column["DATA_TYPE"],
-					"column_type"    => $column["COLUMN_TYPE"],
-					"length"         => ($column["CHARACTER_MAXIMUM_LENGTH"] ?? $column["NUMERIC_PRECISION"].($column["NUMERIC_SCALE"] != 0 ? ",".$column["NUMERIC_SCALE"] : "")),
-					"character_set"  => $column["CHARACTER_SET_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() && $this->useOverwrites ? PhpMySqlGit::$instance->getCharset() : $column["CHARACTER_SET_NAME"],
-					"collation"      => $column["COLLATION_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() && $this->useOverwrites ? PhpMySqlGit::$instance->getCollation() : $column["COLLATION_NAME"],
-					"auto_increment" => $column["EXTRA"] === "auto_increment",
-					"comment"        => $column["COLUMN_COMMENT"],
-					"on_update"      => stripos($column["EXTRA"], "on update") !== false,
-				];
+		if (!empty($this->structure["databases"][$this->database]["tables"])) {
+			foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
+				$sql = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table ORDER BY ORDINAL_POSITION;";
+				foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $column) {
+					$columnDefinition = [
+						"name"           => $column["COLUMN_NAME"],
+						"default"        => $this->getColumnDefault($column["COLUMN_DEFAULT"]),
+						"nullable"       => $column["IS_NULLABLE"] == "NO" ? false : true,
+						"type"           => $column["DATA_TYPE"],
+						"column_type"    => $column["COLUMN_TYPE"],
+						"length"         => ($column["CHARACTER_MAXIMUM_LENGTH"] ?? $column["NUMERIC_PRECISION"].($column["NUMERIC_SCALE"] != 0 ? ",".$column["NUMERIC_SCALE"] : "")),
+						"character_set"  => $column["CHARACTER_SET_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() && $this->useOverwrites ? PhpMySqlGit::$instance->getCharset() : $column["CHARACTER_SET_NAME"],
+						"collation"      => $column["COLLATION_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() && $this->useOverwrites ? PhpMySqlGit::$instance->getCollation() : $column["COLLATION_NAME"],
+						"auto_increment" => $column["EXTRA"] === "auto_increment",
+						"comment"        => $column["COLUMN_COMMENT"],
+						"on_update"      => stripos($column["EXTRA"], "on update") !== false,
+					];
 
-				$structure['columns'][] = $columnDefinition;
+					$structure['columns'][] = $columnDefinition;
+				}
 			}
 		}
 	}
 
 	protected function getIndicies() {
-		foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
-			$sql = "SHOW INDEX FROM `".$table."`;";
-			foreach ($this->query($sql) as $index) {
+		if (!empty($this->structure["databases"][$this->database]["tables"])) {
+			foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
+				$sql = "SHOW INDEX FROM `".$table."`;";
+				foreach ($this->query($sql) as $index) {
 
-				$indexType = "§§keys";
-				if ($index["Key_name"] === "PRIMARY") {
-					$indexType = "§§primaryKeys";
-				} elseif ($index["Non_unique"] === "0" || $index["Non_unique"] === 0) {
-					$indexType = "§§uniqueKeys";
-				} elseif ($index['Index_type'] === "FULLTEXT") {
-					$indexType = "§§fulltextKeys";
-				} elseif ($index['Index_type'] === "SPATIAL") {
-					$indexType = "§§spatialKeys";
+					$indexType = "§§keys";
+					if ($index["Key_name"] === "PRIMARY") {
+						$indexType = "§§primaryKeys";
+					} elseif ($index["Non_unique"] === "0" || $index["Non_unique"] === 0) {
+						$indexType = "§§uniqueKeys";
+					} elseif ($index['Index_type'] === "FULLTEXT") {
+						$indexType = "§§fulltextKeys";
+					} elseif ($index['Index_type'] === "SPATIAL") {
+						$indexType = "§§spatialKeys";
+					}
+
+					$structure[$indexType][$index["Key_name"]]["columns"][] = [
+						"name"  => $index["Column_name"],
+						"order" => $index["Collation"]
+					];
+
+					if (in_array($index["Index_type"], ["BTREE", "HASH"])) {
+						$structure[$indexType][$index["Key_name"]]["index_type"] = $index["Index_type"];
+					}
 				}
+				if ($table === "addresses") {
 
-				$structure[$indexType][$index["Key_name"]]["columns"][] = [
-					"name"  => $index["Column_name"],
-					"order" => $index["Collation"]
-				];
-
-				if (in_array($index["Index_type"], ["BTREE", "HASH"])) {
-					$structure[$indexType][$index["Key_name"]]["index_type"] = $index["Index_type"];
 				}
-			}
-			if ($table === "addresses") {
-
 			}
 		}
 	}
 
 	protected function getForeignKeys() {
-		foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
-			$sql = "SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table AND NOT ISNULL(REFERENCED_TABLE_NAME) ORDER BY ORDINAL_POSITION;";
-			foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
+		if (!empty($this->structure["databases"][$this->database]["tables"])) {
+			foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
+				$sql = "SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table AND NOT ISNULL(REFERENCED_TABLE_NAME) ORDER BY ORDINAL_POSITION;";
+				foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
 
-				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["columns"][]            = $foreignKey["COLUMN_NAME"];
-				//$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_schema"]    = $foreignKey["REFERENCED_TABLE_SCHEMA"];
-				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_table"]     = $foreignKey["REFERENCED_TABLE_NAME"];
-				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_columns"][] = $foreignKey["REFERENCED_COLUMN_NAME"];
+					$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["columns"][]            = $foreignKey["COLUMN_NAME"];
+					//$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_schema"]    = $foreignKey["REFERENCED_TABLE_SCHEMA"];
+					$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_table"]     = $foreignKey["REFERENCED_TABLE_NAME"];
+					$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_columns"][] = $foreignKey["REFERENCED_COLUMN_NAME"];
 
-			}
+				}
 
-			$sql = "SELECT * FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = :database AND TABLE_NAME = :table;";
-			foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
-				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["UPDATE_RULE"] = $foreignKey["UPDATE_RULE"];
-				$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["DELETE_RULE"] = $foreignKey["DELETE_RULE"];
+				$sql = "SELECT * FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = :database AND TABLE_NAME = :table;";
+				foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
+					$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["UPDATE_RULE"] = $foreignKey["UPDATE_RULE"];
+					$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["DELETE_RULE"] = $foreignKey["DELETE_RULE"];
+				}
 			}
 		}
 	}
