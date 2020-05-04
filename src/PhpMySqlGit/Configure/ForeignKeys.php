@@ -6,7 +6,7 @@ namespace PhpMySqlGit\Configure;
 
 use PhpMySqlGit\Core\Common;
 use PhpMySqlGit\PhpMySqlGit;
-use PhpMysSqlGit\Sql\Key;
+use PhpMySqlGit\Sql\Key;
 
 class ForeignKeys {
 	use Configuration;

@@ -5,7 +5,7 @@ namespace PhpMySqlGit\Configure;
 
 
 use PhpMySqlGit\PhpMySqlGit;
-use PhpMysSqlGit\Sql\Key;
+use PhpMySqlGit\Sql\Key;
 
 class Database {
 	use Configuration;
@@ -66,7 +66,7 @@ class Database {
 	}
 
 	protected function getDb($settings) {
-		$db            = new \PhpMysSqlGit\Sql\Database();
+		$db            = new \PhpMySqlGit\Sql\Database();
 		$db->name      = PhpMySqlGit::$instance->getDbname();
 
 		$db->charset   = PhpMySqlGit::$instance->isOverwriteCharset() ? PhpMySqlGit::$instance->getCharset() : $settings["DEFAULT_CHARACTER_SET_NAME"];

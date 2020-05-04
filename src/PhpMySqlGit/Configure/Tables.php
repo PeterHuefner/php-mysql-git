@@ -5,8 +5,8 @@ namespace PhpMySqlGit\Configure;
 
 
 use PhpMySqlGit\PhpMySqlGit;
-use PhpMysSqlGit\Sql\Column;
-use PhpMysSqlGit\Sql\Table;
+use PhpMySqlGit\Sql\Column;
+use PhpMySqlGit\Sql\Table;
 
 class Tables {
 	use Configuration;
