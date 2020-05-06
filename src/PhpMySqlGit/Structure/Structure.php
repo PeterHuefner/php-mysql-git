@@ -98,13 +98,18 @@ class Structure {
 		$this->saveArrayToFile($settings, $this->path($this->directory, [$database, "tables", $table.".php"]));
 	}
 
-	public function saveData($data, $database) {
+	public function saveData($data, $database, $indexFiles) {
 		if (is_dir($this->directory)) {
 			$this->checkCreateDir($this->path($this->directory, [$database, "data"]));
 
 			$counter = 0;
 			foreach ($data as $tableName => &$tableData) {
-				$this->saveArrayToFile([$tableName => $tableData], $this->path($this->directory, [$database, "data", sprintf('%08d', $counter)."-".$tableName.".php"]));
+				$fileName = $tableName.".php";
+				if ($indexFiles) {
+					$fileName = sprintf('%08d', $counter)."-".$fileName;
+				}
+
+				$this->saveArrayToFile([$tableName => $tableData], $this->path($this->directory, [$database, "data", $fileName]));
 				$counter++;
 			}
 		} else {

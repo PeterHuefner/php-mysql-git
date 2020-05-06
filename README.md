@@ -94,7 +94,7 @@ $phpMySqlGit->setEngine('InnoDB');     // InnoDB is the default
 $phpMySqlGit->setOverwriteRowFormat(true); //false is default
 $phpMySqlGit->setOverwriteEngine(true); // false is default
 
-// you also can omit charset, engine and row format - so ignore the checking completly
+// you also can omit charset, engine and row format - so ignore the checking completely
 $phpMySqlGit->setIgnoreCharset(true);
 $phpMySqlGit->setIgnoreEngine(true);
 $phpMySqlGit->setIgnoreRowFormat(true);
@@ -140,6 +140,13 @@ $phpMySqlGit->saveData(
         'ANOTHER_TABLE' => 'status',                  // exclude one column for specific table
     ]
 );
+
+// Passing true as the 4th. argument to saveData, will create data files with an numeric incremental index, in order of the occurence of the table-name in the table-Array
+// If the table-array (2th. argument) is empty, the order of table of databaseserver is used.
+// When using the index-feature you can ensure that the created Insert-Statements of configureData are in the same order as you have saveData called.
+// But be careful with the index-feature, when you use saveData multiple times with different tables. It may creates multiple data files per table with different numeric index.
+$phpMySqlGit->saveData($structureDirectory, [], [], true);
+
 
 // ouput all statements that are necessary to change the database according to stored structure
 echo(implode("\n\n", $phpMySqlGit->configureDatabase($structureDirectory)));

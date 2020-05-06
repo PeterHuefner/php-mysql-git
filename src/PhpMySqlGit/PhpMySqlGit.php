@@ -575,13 +575,19 @@ class PhpMySqlGit {
 	 * 'category' => 'last_update' // blacklisted only fot the table 'category'
 	 * ]
 	 *
+	 * if $indexFiles is true, then a numeric increment is put in the filename. This is to ensure, that the order of tables is remembered every time.
+	 * When you use this, make sure you always use saveData with the same order of Tables in array $tables. Otherwise data files for same table will be created multiple times.
+	 * if $indexFiles is false (which is the default), only the tablename is used as filename.
+	 * Consider to use setForeignKeyChecksForData to false, to prevent Foreign Key Errors.
+	 *
 	 * @param null|string $saveToDir
 	 * @param array $tables
 	 * @param array $skipColumns
+	 * @param bool $indexFiles
 	 * @return array
 	 * @throws Exception
 	 */
-	public function saveData($saveToDir = null, $tables = [], $skipColumns = []) {
+	public function saveData($saveToDir = null, $tables = [], $skipColumns = [], $indexFiles = false) {
 		$data = $this->database->getData($tables);
 
 		if ($skipColumns) {
@@ -610,7 +616,7 @@ class PhpMySqlGit {
 
 		if ($saveToDir) {
 			$structure = new Structure\Structure($saveToDir);
-			$structure->saveData($data, $this->dbname);
+			$structure->saveData($data, $this->dbname, $indexFiles);
 		}
 
 		return $data;
