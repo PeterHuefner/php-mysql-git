@@ -31,10 +31,10 @@ class CommandLineInterface {
 	public function execute() {
 		$this->prepare();
 		$executionFunctions = [
-			'configureDatabase' => 0,
-			'configureData'     => 0,
-			'saveStructure'     => 0,
-			'saveData'          => 0,
+			'configureDatabase' => true,
+			'configureData'     => true,
+			'saveStructure'     => false,
+			'saveData'          => false,
 		];
 
 		foreach ($this->args as $function => $args) {
@@ -44,13 +44,14 @@ class CommandLineInterface {
 				if (!empty($this->dataDir)) {
 					$functionArguments[$executionFunctions[$function]] = $this->dataDir;
 				}
-				call_user_func_array([$this->phpMySqlGit, $function], $functionArguments);
-				//var_dump($functionArguments);
+				$response = call_user_func_array([$this->phpMySqlGit, $function], $functionArguments);
+
+				// output the data
+				if ($executionFunctions[$function]) {
+					echo implode("\n\n", $response);
+				}
 			}
 		}
-
-		//var_dump($this->phpMySqlGit);
-		//var_dump($this->args);
 	}
 
 	protected function prepare() {
