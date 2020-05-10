@@ -31,10 +31,10 @@ class CommandLineInterface {
 	public function execute() {
 		$this->prepare();
 		$executionFunctions = [
-			'configureDatabase' => true,
-			'configureData'     => true,
-			'saveStructure'     => false,
-			'saveData'          => false,
+			'configureDatabase' => 0,
+			'configureData'     => 0,
+			'saveStructure'     => 0,
+			'saveData'          => 0,
 		];
 
 		foreach ($this->args as $function => $args) {
@@ -47,7 +47,7 @@ class CommandLineInterface {
 				$response = call_user_func_array([$this->phpMySqlGit, $function], $functionArguments);
 
 				// output the data
-				if ($executionFunctions[$function]) {
+				if (stripos($function, "configure") === 0) {
 					echo implode("\n\n", $response);
 				}
 			}
