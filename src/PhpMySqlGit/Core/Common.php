@@ -11,7 +11,6 @@ class Common {
 			$array = array_merge($elements, $array);
 		} else {
 			$indexPos = array_search($index, array_keys($array));
-			$length   = ($indexPos === 0 ? 1 : $indexPos);
 
 			if (is_int($indexPos)) {
 				$indexPos++;

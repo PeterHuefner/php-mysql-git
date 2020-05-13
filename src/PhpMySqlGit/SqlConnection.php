@@ -198,9 +198,6 @@ class SqlConnection {
 						$structure[$indexType][$index["Key_name"]]["index_type"] = $index["Index_type"];
 					}
 				}
-				if ($table === "addresses") {
-
-				}
 			}
 		}
 	}

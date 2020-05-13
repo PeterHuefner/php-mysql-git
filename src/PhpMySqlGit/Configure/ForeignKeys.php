@@ -23,7 +23,7 @@ class ForeignKeys {
 			if (!empty($tableSettings["§§foreignKeys"])) {
 				foreach ($tableSettings["§§foreignKeys"] as $foreignKey => &$foreignKeySettings) {
 					if (empty($this->fileStructure["databases"][$this->database]["tables"][$tableName]["§§foreignKeys"][$foreignKey])) {
-						$key = new Key($foreignKeyName, $foreignKeySettings);
+						$key = new Key($foreignKey, $foreignKeySettings);
 						$this->statements[] = "ALTER TABLE `{$tableName}` ".$key->dropForeignKey();
 					}
 				}

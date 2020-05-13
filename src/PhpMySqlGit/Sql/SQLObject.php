@@ -4,7 +4,7 @@
 namespace PhpMySqlGit\Sql;
 
 
-use PhpMySqlGit\Common\Exception;
+use PhpMySqlGit\Core\Exception;
 
 trait SQLObject {
 	protected $definition = [];

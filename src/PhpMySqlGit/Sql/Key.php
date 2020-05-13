@@ -80,15 +80,15 @@ class Key {
 	}
 
 	public function dropUniqueKey() {
-		return $this->drop("UNIQUE");
+		return $this->drop("");
 	}
 
 	public function dropFulltextKey() {
-		return $this->drop("FULLTEXT");
+		return $this->drop("");
 	}
 
 	public function dropSpatialKey() {
-		return $this->drop("SPATIAL");
+		return $this->drop("");
 	}
 
 	public function dropForeignKey() {

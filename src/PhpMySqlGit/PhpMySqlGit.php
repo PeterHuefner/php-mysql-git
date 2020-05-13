@@ -283,7 +283,7 @@ class PhpMySqlGit {
 	}
 
 	/**
-	 * Sets the numeric permission for directories in the strcuture dir
+	 * Sets the numeric permission for directories in the structure dir
 	 *
 	 * @param string $dirMod
 	 */

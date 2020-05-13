@@ -4,6 +4,7 @@
 namespace PhpMySqlGit\Configure;
 
 
+use PhpMySqlGit\Core\Common;
 use PhpMySqlGit\PhpMySqlGit;
 use PhpMySqlGit\Sql\Column;
 use PhpMySqlGit\Sql\Key;
@@ -228,7 +229,7 @@ class Columns {
 	}
 
 	protected function checkKey(string $keyType, string $keyName) {
-		$dbKey   = &$this->dbStructure["databases"][$this->database]["tables"][$this->currentTable][$keyType][$keyName] ?? null;
+		$dbKey   = $this->dbStructure["databases"][$this->database]["tables"][$this->currentTable][$keyType][$keyName] ?? null;
 		$fileKey = &$this->fileStructure["databases"][$this->database]["tables"][$this->currentTable][$keyType][$keyName];
 
 		if (!$dbKey) {

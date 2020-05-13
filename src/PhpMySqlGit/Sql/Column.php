@@ -71,7 +71,7 @@ class Column {
 		}
 
 		if ($this->definition["comment"]) {
-			$sql .= " COMMENT ".\PhpMySqlGit\PhpMySqlGit::$instance->escape($this->definition["comment"]);
+			$sql .= " COMMENT ".PhpMySqlGit::$instance->escape($this->definition["comment"]);
 		}
 
 		/*if ($this->definition["character_set"]) {

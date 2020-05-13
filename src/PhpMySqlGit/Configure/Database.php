@@ -26,7 +26,7 @@ class Database {
 		$foreignKeys = new ForeignKeys($this->dbStructure, $this->fileStructure);
 		$foreignKeys->configure();
 		$this->statements             = array_merge($this->statements, $foreignKeys->getStatements());
-		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $this->getCommentedOutStatements());
+		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $foreignKeys->getCommentedOutStatements());
 
 		/*$columns = new Columns($this->dbStructure, $this->fileStructure);
 		$columns->configure();
@@ -59,7 +59,7 @@ class Database {
 			}
 
 		} else {
-			$this->statements[] = $this->getDb()->create();
+			$this->statements[] = $this->getDb($this->fileStructure["databases"][$this->database])->create();
 			$this->statements[] = "USE `{$this->database}`";
 			$this->skipGlobalUseStatement = true;
 		}
