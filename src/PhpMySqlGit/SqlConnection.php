@@ -62,6 +62,7 @@ class SqlConnection {
 	}
 
 	public function readDbStructure() {
+		$this->setNames();
 		$this->getDatabase();
 
 		if (!empty($this->structure["databases"][$this->database])) {
@@ -154,7 +155,7 @@ class SqlConnection {
 				foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $column) {
 					$columnDefinition = [
 						"name"           => $column["COLUMN_NAME"],
-						"default"        => $this->getColumnDefault($column["COLUMN_DEFAULT"]),
+						"default"        => $this->getColumnDefault($column),
 						"nullable"       => $column["IS_NULLABLE"] == "NO" ? false : true,
 						"type"           => $column["DATA_TYPE"],
 						"column_type"    => $column["COLUMN_TYPE"],
@@ -224,15 +225,30 @@ class SqlConnection {
 		}
 	}
 
-	protected function getColumnDefault($default) {
-		if ($default === "current_timestamp()") {
-			$default = "CURRENT_TIMESTAMP";
+	protected function getColumnDefault(array $columnDefinition) {
+		if ($columnDefinition['COLUMN_DEFAULT'] === "current_timestamp()") {
+			$columnDefinition['COLUMN_DEFAULT'] = "CURRENT_TIMESTAMP";
 		}
 
-		return $default;
+		// some older mariadb Versions (10.1) store default here as NULL, when the column is nullable
+		// newer (10.4) store a 'NULL' instead, which is more clear
+		// so if a column is nullable and the defaul value is NULL, convert it to 'NULL'
+		// a default with a string NULL, would be saved as NULL surrounded with quotes, => "'NULL'".
+		if ($columnDefinition["IS_NULLABLE"] == "NO") {
+			$columnDefinition['COLUMN_DEFAULT'] = NULL;
+		} else {
+			if ($columnDefinition['COLUMN_DEFAULT'] === NULL) {
+				$columnDefinition['COLUMN_DEFAULT'] = 'NULL';
+			} elseif (is_string($columnDefinition['COLUMN_DEFAULT']) && strtolower($columnDefinition['COLUMN_DEFAULT']) === 'null') {
+				$columnDefinition['COLUMN_DEFAULT'] = 'NULL';
+			}
+		}
+
+		return $columnDefinition['COLUMN_DEFAULT'];
 	}
 
 	public function getData($tables = []) {
+		$this->setNames();
 		$this->useDatabase();
 
 		$data = [];
@@ -243,7 +259,6 @@ class SqlConnection {
 			foreach (array_values($tables) as $index => $table) {
 				$tableParams[":table".$index] = $table;
 			}
-			//var_dump($tableParams);exit();
 			$sql .= "AND TABLE_NAME IN(".implode(", ", array_keys($tableParams)).")";
 			$params = array_merge($params, $tableParams);
 
@@ -262,5 +277,7 @@ class SqlConnection {
 		return ($statement ? $statement->fetchAll(\PDO::FETCH_ASSOC) : []);
 	}
 
-
+	public function setNames() {
+		$this->pdo->query("SET NAMES '".PhpMySqlGit::$instance->getCharset()."' COLLATE '".PhpMySqlGit::$instance->getCollation()."';");
+	}
 }

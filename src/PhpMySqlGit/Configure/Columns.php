@@ -166,6 +166,12 @@ class Columns {
 	public function checkColumn(array $dbColSettings, array $fileColSettings) {
 		$columnCorrect = true;
 
+		// resolve differences between mariadb versions
+		// default value NULL of nullable columns should be always a string NULL
+		if ($fileColSettings['nullable'] === true && $fileColSettings['default'] === null) {
+			$fileColSettings['default'] = 'NULL';
+		}
+
 		foreach ($dbColSettings as $settingName => $settingValue) {
 			if (PhpMySqlGit::$instance->isIgnoreCharset() && in_array($settingName, ['collation', 'character_set'])) {
 				continue;
