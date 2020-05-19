@@ -234,9 +234,7 @@ class SqlConnection {
 		// newer (10.4) store a 'NULL' instead, which is more clear
 		// so if a column is nullable and the defaul value is NULL, convert it to 'NULL'
 		// a default with a string NULL, would be saved as NULL surrounded with quotes, => "'NULL'".
-		if ($columnDefinition["IS_NULLABLE"] == "NO") {
-			$columnDefinition['COLUMN_DEFAULT'] = NULL;
-		} else {
+		if ($columnDefinition["IS_NULLABLE"] != "NO") {
 			if ($columnDefinition['COLUMN_DEFAULT'] === NULL) {
 				$columnDefinition['COLUMN_DEFAULT'] = 'NULL';
 			} elseif (is_string($columnDefinition['COLUMN_DEFAULT']) && strtolower($columnDefinition['COLUMN_DEFAULT']) === 'null') {
