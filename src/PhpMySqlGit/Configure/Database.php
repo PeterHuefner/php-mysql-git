@@ -6,6 +6,7 @@ namespace PhpMySqlGit\Configure;
 
 use PhpMySqlGit\PhpMySqlGit;
 use PhpMySqlGit\Sql\Key;
+use PhpMySqlGit\Sql\Table;
 
 class Database {
 	use Configuration;
@@ -27,11 +28,6 @@ class Database {
 		$foreignKeys->configure();
 		$this->statements             = array_merge($this->statements, $foreignKeys->getStatements());
 		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $foreignKeys->getCommentedOutStatements());
-
-		/*$columns = new Columns($this->dbStructure, $this->fileStructure);
-		$columns->configure();
-		$this->statements = array_merge($this->statements, $columns->getStatements());
-		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $columns->getCommentedOutStatements());*/
 
 		$this->handleForeignKeys();
 	}
@@ -133,6 +129,37 @@ class Database {
 			if (preg_match('/;$/', $statement) !== 1) {
 				$statement .= ";";
 			}
+		}
+
+		if (PhpMySqlGit::$changedCharsetObjects && !PhpMySqlGit::$instance->isIgnoreCharset()) {
+			$convertStatements = [<<<EOT
+###############################################################################################################################################################################
+# !!! ATTENTION !!! ATTENTION !!! ATTENTION !!! !!! ATTENTION !!! ATTENTION !!! ATTENTION !!! ATTENTION !!! ATTENTION !!! ATTENTION !!! ATTENTION !!! ATTENTION !!! ATTENTION #
+#                                                                                                                                                                             #
+# At least one table has a column with a different charset/collation as stated in file structure and would be changed in statements.                                          #
+# In general there are two ways to change charsets for tables and their columns. One is to modify/change each column and specify the charset.                                 #
+# Other one is to CONVERT in ALTER TABLE, this would change charset for table and all columns (which support a charset) in one statement.                                     #
+#                                                                                                                                                                             #
+# In some situations these ways can fail and crash the server (should start with normal operations, so this should not lead to a heavy database crash).                       #
+# It depends on server version and sitation https://jira.mariadb.org/browse/MDEV-19300 , https://jira.mariadb.org/browse/MDEV-21214 .                                         #
+#                                                                                                                                                                             #
+# Second way can be more reliable, BUT: It also can change column types!                                                                                                      #
+# Text can become mediumtext etc., to ensure your data will fit after convert. This inline convert is done by the server and php-mysql-git will                               #
+# generate alter statements the next time to the stored types.                                                                                                                #
+# You have to check and solve this by your own (recreate/save structure files).                                                                                               #
+#                                                                                                                                                                             #
+# Following statements contain both ways. Directly after this comment block come the CONVERT-Statements, they are commented out via multiline comment.                        #
+# Statements with the modify way are printed further down, togehter with other changes. They are not commented out.                                                           #
+###############################################################################################################################################################################
+/*
+EOT
+];
+			foreach (array_keys(PhpMySqlGit::$changedCharsetObjects) as $tableName) {
+				$table = new Table($tableName, $this->fileStructure["databases"][$this->database]["tables"][$tableName]);
+				$convertStatements[] = $table->convertTo();
+			}
+			$convertStatements[] = "/**/";
+			$this->statements = array_merge($convertStatements, $this->statements);
 		}
 
 		if (!$this->skipGlobalUseStatement) {

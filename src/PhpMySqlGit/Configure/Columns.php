@@ -179,6 +179,11 @@ class Columns {
 
 			if ($settingValue !== $fileColSettings[$settingName]) {
 				$columnCorrect = false;
+
+				if (in_array($settingName, ['collation', 'character_set'])) {
+					PhpMySqlGit::$changedCharsetObjects[$this->currentTable][$fileColSettings['name']] = true;
+				}
+
 				break;
 			}
 		}

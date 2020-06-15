@@ -12,12 +12,6 @@ class ForeignKeys {
 	use Configuration;
 
 	public function configure() {
-		foreach ($this->fileStructure["databases"][$this->database]["tables"] as $tableName => &$tableSettings) {
-			if (!empty($tableSettings["§§foreignKeys"])) {
-				$this->checkForeignKeysForTable($tableName, $tableSettings);
-			}
-		}
-
 		// drop foreign keys that are not present in filestructure
 		foreach ($this->dbStructure["databases"][$this->database]["tables"] as $tableName => &$tableSettings) {
 			if (!empty($tableSettings["§§foreignKeys"])) {
@@ -27,6 +21,12 @@ class ForeignKeys {
 						$this->statements[] = "ALTER TABLE `{$tableName}` ".$key->dropForeignKey();
 					}
 				}
+			}
+		}
+
+		foreach ($this->fileStructure["databases"][$this->database]["tables"] as $tableName => &$tableSettings) {
+			if (!empty($tableSettings["§§foreignKeys"])) {
+				$this->checkForeignKeysForTable($tableName, $tableSettings);
 			}
 		}
 	}

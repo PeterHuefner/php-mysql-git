@@ -62,7 +62,7 @@ class Column {
 			$sql .= " NULL";
 		}
 
-		if ($this->definition["default"]) {
+		if ($this->definition["default"] !== null) {
 			$sql .= " DEFAULT ".$this->defaultValue();
 		}
 

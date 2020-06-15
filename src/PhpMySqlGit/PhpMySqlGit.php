@@ -18,6 +18,13 @@ class PhpMySqlGit {
 	 */
 	public static $changedObjects = [];
 
+	/**
+	 * a collection of Tables and Columns that should have another charset
+	 *
+	 * @var array
+	 */
+	public static $changedCharsetObjects = [];
+
 	#region internal properties
 
 	/**

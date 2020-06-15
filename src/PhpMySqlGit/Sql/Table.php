@@ -100,4 +100,8 @@ class Table {
 
 		return $statements;
 	}
+
+	public function convertTo() {
+		return "ALTER TABLE `{$this->name}` CONVERT TO CHARACTER SET {$this->getCharacterSetFromCollation($this->definition["collation"])} COLLATE {$this->definition["collation"]};";
+	}
 }
