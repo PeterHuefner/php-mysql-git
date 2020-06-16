@@ -191,8 +191,9 @@ class SqlConnection {
 					}
 
 					$structure[$indexType][$index["Key_name"]]["columns"][] = [
-						"name"  => $index["Column_name"],
-						"order" => $index["Collation"]
+                        "name"     => $index["Column_name"],
+                        "order"    => $index["Collation"],
+                        "sub_part" => $index["Sub_part"],
 					];
 
 					if (in_array($index["Index_type"], ["BTREE", "HASH"])) {

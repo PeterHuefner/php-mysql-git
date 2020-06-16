@@ -21,7 +21,8 @@ class Key {
 		$comma = "";
 		$sql .= " (";
 		foreach ($this->definition["columns"] as $column) {
-			$sql .= $comma."`".$column["name"]."` ASC";
+            $colLength = !empty($column["sub_part"]) ? "({$column["sub_part"]}) " : "";
+            $sql .= "{$comma}`{$column["name"]}` {$colLength}ASC";
 			$comma = ", ";
 		}
 
