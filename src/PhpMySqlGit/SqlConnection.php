@@ -207,30 +207,21 @@ class SqlConnection {
 	protected function getForeignKeys() {
 		if (!empty($this->structure["databases"][$this->database]["tables"])) {
 			foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
-				$sql = "SHOW KEYS IN {$this->database}.{$table};";
-				$keyOrder = [];
-				foreach ($this->query($sql) as $keyInfo) {
-					$keyOrder[] = $keyInfo["Key_name"];
-				}
+                $sql = "SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table AND NOT ISNULL(REFERENCED_TABLE_NAME) ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION, POSITION_IN_UNIQUE_CONSTRAINT;";
+                foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
 
-				if ($keyOrder) {
-					$sql = "SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table AND NOT ISNULL(REFERENCED_TABLE_NAME) ORDER BY FIELD(CONSTRAINT_NAME, \"".implode('", "', $keyOrder)."\");";
-					foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
+                    $structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["columns"][] = $foreignKey["COLUMN_NAME"];
+                    //$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_schema"]    = $foreignKey["REFERENCED_TABLE_SCHEMA"];
+                    $structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_table"]     = $foreignKey["REFERENCED_TABLE_NAME"];
+                    $structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_columns"][] = $foreignKey["REFERENCED_COLUMN_NAME"];
 
-						$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["columns"][]            = $foreignKey["COLUMN_NAME"];
-						//$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_schema"]    = $foreignKey["REFERENCED_TABLE_SCHEMA"];
-						$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_table"]     = $foreignKey["REFERENCED_TABLE_NAME"];
-						$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["referenced_columns"][] = $foreignKey["REFERENCED_COLUMN_NAME"];
+                }
 
-					}
-
-					$sql = "SELECT * FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = :database AND TABLE_NAME = :table;";
-					foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
-						$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["UPDATE_RULE"] = $foreignKey["UPDATE_RULE"];
-						$structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["DELETE_RULE"] = $foreignKey["DELETE_RULE"];
-					}
-				}
-
+                $sql = "SELECT * FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = :database AND TABLE_NAME = :table;";
+                foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $foreignKey) {
+                    $structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["UPDATE_RULE"] = $foreignKey["UPDATE_RULE"];
+                    $structure["§§foreignKeys"][$foreignKey["CONSTRAINT_NAME"]]["DELETE_RULE"] = $foreignKey["DELETE_RULE"];
+                }
 			}
 		}
 	}
