@@ -489,7 +489,7 @@ class PhpMySqlGit {
 
 	protected function prepare() {
 		if (empty($this->dbname)) {
-			throw new Exception("no database provided");
+			throw new Exception("you have not specified a database");
 		}
 
 		self::$instance = $this;
@@ -504,6 +504,8 @@ class PhpMySqlGit {
 	 * @throws Core\Exception
 	 */
 	public function configureDatabase($structureSource) {
+		$this->prepare();
+
 		$this->database->setUseOverwrites(false);
 		$this->dbStructure = $this->database->readDbStructure();
 		if (is_string($structureSource)) {
@@ -531,6 +533,8 @@ class PhpMySqlGit {
 	 * @return array
 	 */
 	public function configureData($structureSource) {
+		$this->prepare();
+
 		if (is_string($structureSource)) {
 			$structure = new Structure\Structure($structureSource);
 			$data = $structure->readData($this->dbname);
@@ -555,6 +559,8 @@ class PhpMySqlGit {
 	 * @throws Exception
 	 */
 	public function saveStructure($saveToDir = null, $tables = []) {
+		$this->prepare();
+
 		$this->database->setUseOverwrites(true);
 		$this->dbStructure = $this->database->readDbStructure();
 
@@ -595,6 +601,8 @@ class PhpMySqlGit {
 	 * @throws Exception
 	 */
 	public function saveData($saveToDir = null, $tables = [], $skipColumns = [], $indexFiles = false) {
+		$this->prepare();
+
 		$data = $this->database->getData($tables);
 
 		if ($skipColumns) {

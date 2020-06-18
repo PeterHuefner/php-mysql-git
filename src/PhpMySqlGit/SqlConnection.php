@@ -4,6 +4,8 @@
 namespace PhpMySqlGit;
 
 
+use PhpMySqlGit\Core\Exception;
+
 class SqlConnection {
 
 	protected $pdo;
@@ -12,6 +14,7 @@ class SqlConnection {
 	protected $database;
 
 	protected $useOverwrites = false;
+	protected $showCreateTable = "";
 
 	/**
 	 * SqlConnection constructor.
@@ -151,11 +154,16 @@ class SqlConnection {
 	protected function getColumns() {
 		if (!empty($this->structure["databases"][$this->database]["tables"])) {
 			foreach ($this->structure["databases"][$this->database]["tables"] as $table => &$structure) {
+				$sql = "SHOW CREATE TABLE `{$this->database}`.`{$table}`";
+				foreach ($this->query($sql) as $showCreate) {
+					$this->showCreateTable = $showCreate['Create Table'];
+				}
+
 				$sql = "SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table ORDER BY ORDINAL_POSITION;";
 				foreach ($this->query($sql, [":table" => $table, ":database" => $this->database]) as $column) {
 					$columnDefinition = [
 						"name"           => $column["COLUMN_NAME"],
-						"default"        => $this->getColumnDefault($column),
+						"default"        => $this->getColumnDefault($column, $table),
 						"nullable"       => $column["IS_NULLABLE"] == "NO" ? false : true,
 						"type"           => $column["DATA_TYPE"],
 						"column_type"    => $column["COLUMN_TYPE"],
@@ -226,24 +234,60 @@ class SqlConnection {
 		}
 	}
 
-	protected function getColumnDefault(array $columnDefinition) {
-		if ($columnDefinition['COLUMN_DEFAULT'] === "current_timestamp()") {
-			$columnDefinition['COLUMN_DEFAULT'] = "CURRENT_TIMESTAMP";
-		}
+	protected function getColumnDefault(array $columnDefinition, string $table) {
+		// to ensure DEFAULT VALUE is determined correctly across different mysql and mariadb versions:
+		// get default value from information_schema first
+		// if it is wrapped with quotes (') all is fine, use value as is
+		// if not get value from SHOW CREATE TABLE Statement - there we can also stable determine if any DEFAULT VALUE is present
 
-		// some older mariadb Versions (10.1) store default here as NULL, when the column is nullable
-		// newer (10.4) store a 'NULL' instead, which is more clear
-		// so if a column is nullable and the defaul value is NULL, convert it to 'NULL'
-		// a default with a string NULL, would be saved as NULL surrounded with quotes, => "'NULL'".
-		if ($columnDefinition["IS_NULLABLE"] != "NO") {
-			if ($columnDefinition['COLUMN_DEFAULT'] === NULL) {
-				$columnDefinition['COLUMN_DEFAULT'] = 'NULL';
-			} elseif (is_string($columnDefinition['COLUMN_DEFAULT']) && strtolower($columnDefinition['COLUMN_DEFAULT']) === 'null') {
-				$columnDefinition['COLUMN_DEFAULT'] = 'NULL';
+		$definitionString = $this->getColumnDefinition($columnDefinition["COLUMN_NAME"]);
+		$default = $columnDefinition['COLUMN_DEFAULT'];
+
+		if (preg_match("/^'.*'$/", $default) !== 1) {
+			// replace any disturbing COMMENT Clause - it is not needed for our purpose
+			$definitionString = preg_replace("/COMMENT '((?:''|[^'])*)'/", "", $definitionString);
+			// replace the separating comma at the end
+			$definitionString = preg_replace('/,$/', "", $definitionString);
+
+			$matches = [];
+			// DEFAULT 'VALUE'
+			if (preg_match("/DEFAULT '((?:''|[^'])*)'/", $definitionString, $matches) === 1) {
+				$default = preg_replace('/^DEFAULT\s/', "", $matches[0]);
+				$default = str_replace("\n", '\n', $default);
+
+			// DEFAULT VALUE
+			} else if (preg_match('/DEFAULT ([^\s]+)/', $definitionString, $matches) === 1) {
+				$default = $matches[1];
+
+			// no default value
+			} elseif (strtolower($default) === "null" || $default === null) {
+				$default = null;
+			} else {
+				throw new Exception("Problem in determining default value for {$table}.{$columnDefinition["COLUMN_NAME"]}. Please report this error in github repo. Aborting Process.");
 			}
 		}
 
-		return $columnDefinition['COLUMN_DEFAULT'];
+		// do not mix the current timestamp values
+		if (strtolower($default) === "current_timestamp()") {
+			$default = "CURRENT_TIMESTAMP";
+		}
+
+		return $default;
+	}
+
+	protected function getColumnDefinition($columnName) {
+		$definition = null;
+
+		foreach (preg_split('/\n/', $this->showCreateTable) as $line) {
+			$matches = [];
+			$regex = '/(`|\s|^)'.$columnName.'(`|\s)/i';
+			if (preg_match($regex, $line, $matches) === 1) {
+				$definition = trim($line);
+				break;
+			}
+		}
+
+		return $definition;
 	}
 
 	public function getData($tables = []) {
