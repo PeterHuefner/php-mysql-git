@@ -13,7 +13,7 @@ if (file_exists(($autoloadPath = __DIR__ . '/../vendor/autoload.php'))) {
 
 $structureDir = __DIR__ . '/data/multiple_databases';
 $phpMySqlGit = new PhpMySqlGit\PhpMySqlGit([
-	'connectionString' => 'mysql:host=127.0.0.1;port=3306;',
+	'connectionString' => 'mysql:host=127.0.0.1;port=3305;',
 	'username'         => 'demouser',
 ]);
 
