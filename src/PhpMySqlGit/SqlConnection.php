@@ -280,7 +280,7 @@ class SqlConnection {
 
 		foreach (preg_split('/\n/', $this->showCreateTable) as $line) {
 			$matches = [];
-			$regex = '/(`|\s|^)'.$columnName.'(`|\s)/i';
+            $regex = '/`'.preg_quote($columnName).'`/i';
 			if (preg_match($regex, $line, $matches) === 1) {
 				$definition = trim($line);
 				break;
