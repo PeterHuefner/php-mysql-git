@@ -66,6 +66,7 @@ class SqlConnection {
 
 	public function readDbStructure() {
 		$this->setNames();
+		$this->setShowCreateQuotes();
 		$this->getDatabase();
 
 		if (!empty($this->structure["databases"][$this->database])) {
@@ -74,6 +75,8 @@ class SqlConnection {
 			$this->getIndicies();
 			$this->getForeignKeys();
 		}
+
+		$this->restoreShowCreateQuotes();
 
 		return $this->structure;
 	}
@@ -167,7 +170,7 @@ class SqlConnection {
 						"nullable"       => $column["IS_NULLABLE"] == "NO" ? false : true,
 						"type"           => $column["DATA_TYPE"],
 						"column_type"    => $column["COLUMN_TYPE"],
-						"length"         => ($column["CHARACTER_MAXIMUM_LENGTH"] ?? $column["NUMERIC_PRECISION"].($column["NUMERIC_SCALE"] != 0 ? ",".$column["NUMERIC_SCALE"] : "")),
+						"length"         => ($column["CHARACTER_MAXIMUM_LENGTH"] ?? $this->getNumericPrecision($column).($column["NUMERIC_SCALE"] != 0 ? ",".$column["NUMERIC_SCALE"] : "")),
 						"character_set"  => $column["CHARACTER_SET_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() && $this->useOverwrites ? PhpMySqlGit::$instance->getCharset() : $column["CHARACTER_SET_NAME"],
 						"collation"      => $column["COLLATION_NAME"] && PhpMySqlGit::$instance->isOverwriteCharset() && $this->useOverwrites ? PhpMySqlGit::$instance->getCollation() : $column["COLLATION_NAME"],
 						"auto_increment" => $column["EXTRA"] === "auto_increment",
@@ -255,6 +258,12 @@ class SqlConnection {
 				$default = preg_replace('/^DEFAULT\s/', "", $matches[0]);
 				$default = str_replace("\n", '\n', $default);
 
+				// Some MySQL and MariaDB Versions are wrapping numbers in quotes - we unify that and remove any edging quotes
+				$numericTest = preg_replace("/(^'|'$)/", "", $default);
+				if (is_numeric($numericTest)) {
+					$default = $numericTest;
+				}
+
 			// DEFAULT VALUE
 			} else if (preg_match('/DEFAULT ([^\s]+)/', $definitionString, $matches) === 1) {
 				$default = $matches[1];
@@ -267,12 +276,35 @@ class SqlConnection {
 			}
 		}
 
+		// some older mariadb Versions (10.1) store default here as NULL, when the column is nullable
+		// newer (10.4) store a 'NULL' instead, which is more clear
+		// so if a column is nullable and the defaul value is NULL, convert it to 'NULL'
+		// a default with a string NULL, would be saved as NULL surrounded with quotes, => "'NULL'".
+		if ($columnDefinition["IS_NULLABLE"] != "NO") {
+			if ($default === NULL) {
+				$default = 'NULL';
+			} elseif (is_string($default) && strtolower($default) === 'null') {
+				$default = 'NULL';
+			}
+		}
+
 		// do not mix the current timestamp values
 		if (strtolower($default) === "current_timestamp()") {
 			$default = "CURRENT_TIMESTAMP";
 		}
 
 		return $default;
+	}
+
+	protected function getNumericPrecision($columnDefinition) {
+		/*if ($columnDefinition["NUMERIC_PRECISION"] !== NULL) {
+			$matches = [];
+			if (preg_match('/'.preg_quote($columnDefinition["DATA_TYPE"]).'\((\d+).*\)/', $columnDefinition["COLUMN_TYPE"], $matches) === 1) {
+				return intval($matches[1]);
+			}
+		}*/
+
+		return $columnDefinition["NUMERIC_PRECISION"];
 	}
 
 	protected function getColumnDefinition($columnName) {
@@ -322,5 +354,13 @@ class SqlConnection {
 
 	public function setNames() {
 		$this->pdo->query("SET NAMES '".PhpMySqlGit::$instance->getCharset()."' COLLATE '".PhpMySqlGit::$instance->getCollation()."';");
+	}
+
+	public function setShowCreateQuotes() {
+		$this->pdo->query("SET @OLD_sql_quote_show_create=@@sql_quote_show_create, sql_quote_show_create=1;");
+	}
+
+	public function restoreShowCreateQuotes() {
+		$this->pdo->query("SET sql_quote_show_create=1=@OLD_sql_quote_show_create;");
 	}
 }

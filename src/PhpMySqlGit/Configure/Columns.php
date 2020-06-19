@@ -176,6 +176,10 @@ class Columns {
 			if (PhpMySqlGit::$instance->isIgnoreCharset() && in_array($settingName, ['collation', 'character_set'])) {
 				continue;
 			}
+			// skipping the check of length. We already check column_type which contains a more reliable length statement for comparing purposes
+			if ($settingName === "length") {
+				continue;
+			}
 
 			if ($settingValue !== $fileColSettings[$settingName]) {
 				$columnCorrect = false;

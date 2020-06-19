@@ -48,7 +48,7 @@ class CommandLineInterface {
 
 				// output the data
 				if (stripos($function, "configure") === 0) {
-					echo implode("\n\n", $response);
+					echo implode("\n\n", $response)."\n";
 				}
 			}
 		}
