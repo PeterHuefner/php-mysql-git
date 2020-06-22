@@ -258,11 +258,13 @@ class SqlConnection {
 				$default = preg_replace('/^DEFAULT\s/', "", $matches[0]);
 				$default = str_replace("\n", '\n', $default);
 
-				// Some MySQL and MariaDB Versions are wrapping numbers in quotes - we unify that and remove any edging quotes
-				$numericTest = preg_replace("/(^'|'$)/", "", $default);
-				if (is_numeric($numericTest)) {
-					$default = $numericTest;
-				}
+				// Some MySQL and MariaDB Versions are wrapping numbers in quotes - we unify that and remove any edging quotes, when column is not a numeric type
+				if (in_array($columnDefinition["DATA_TYPE"], ["INTEGER", "INT", "SMALLINT", "TINYINT", "MEDIUMINT", "BIGINT", "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE"])) {
+                    $numericTest = preg_replace("/(^'|'$)/", "", $default);
+                    if (is_numeric($numericTest)) {
+                        $default = $numericTest;
+                    }
+                }
 
 			// DEFAULT VALUE
 			} else if (preg_match('/DEFAULT ([^\s]+)/', $definitionString, $matches) === 1) {
