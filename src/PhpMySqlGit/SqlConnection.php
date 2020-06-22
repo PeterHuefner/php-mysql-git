@@ -259,7 +259,7 @@ class SqlConnection {
 				$default = str_replace("\n", '\n', $default);
 
 				// Some MySQL and MariaDB Versions are wrapping numbers in quotes - we unify that and remove any edging quotes, when column is not a numeric type
-				if (in_array($columnDefinition["DATA_TYPE"], ["INTEGER", "INT", "SMALLINT", "TINYINT", "MEDIUMINT", "BIGINT", "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE"])) {
+				if (in_array(strtoupper($columnDefinition["DATA_TYPE"]), ["INTEGER", "INT", "SMALLINT", "TINYINT", "MEDIUMINT", "BIGINT", "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE"])) {
                     $numericTest = preg_replace("/(^'|'$)/", "", $default);
                     if (is_numeric($numericTest)) {
                         $default = $numericTest;

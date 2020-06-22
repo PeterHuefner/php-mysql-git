@@ -248,7 +248,29 @@ Then you can change the production schema without changing the running code. The
 
 ### Database-Server
 
-php-mysql-git should be compatible with recent MySQL and mariaDB versions. If you encounter a non-compatibility please open an issue.
+php-mysql-git should be compatible with recent MySQL and mariaDB versions and it will try to respect differences between used servers as best as possible and suitable.
+
+Across versions of MySQL and mariaDB there are some differences in storing structure info in information_schema, which are respected and should not lead to a different data or structure in the stored php files.
+For example until mariaDB 10.2.6 and all MySQL at least to Version 8, DEFAULT VALUES are stored in information_schema without information of type. So it is not clear if it is NULL or a string 'NULL'. This information can be obtained from SHOW CREATE TABLE, but there are also differences between versions here.
+Some servers print DEFAULT VALUES for INT with quotes and some not.<br>
+**All in all this should be catched by the tool. Open an issue if you encounter further problems.**
+
+But there are some differences which are not really handable or should be better handled via a review.<br>
+These depend on the used configuration and there default values.
+
+One Example: innodb_large_prefix is enabled by default in newer versions (MySQL 5.7, mariaDB 10.2.2) and usally disabled in older.
+This leads to a different max key length for char and text columns, depending on your charset.<br>
+With utf8mb4 you can index up to 191 chars when innodb_large_prefix is disabled, and up to 768 when enabled (AND ROW FORMAT is DYNAMIC or COMPRESSED).<br>
+So you see there are some version/configuration depended restrictions.<br>
+When you now save the strcuture in mariadb 10.4 of a 
+ * inoodb table in ROW FORMAT DYNAMIC
+ * utf8bm4 column with a length larger than 191 chars
+ * and an index without length or larger than 191 chars
+you have an incompatiblity with another server which has innodb_large_prefix disabled. And this can't be resolved through php-mysql-git.<br>
+You may notice only a repeating DROP KEY and ADD KEY Statement every time you configure data structure. This is because the key is saved without a length in php file, but is created in server with maximum length of 191 chars. Therefore php-mysql-git notices every time a difference.<br>
+Or you ma be not able to persist the CREATE Statement genereted by php-mysql-git, because your server doesn't allow a key length larger than 191 chars. In this case you should make your structure compatible with all used versions.
+
+To ensure everything works on every machine, you should use same server, version and configuration (in critical parts, not in performance settings) on all machines.
 
 ### PHP
 
