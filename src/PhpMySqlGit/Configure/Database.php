@@ -21,12 +21,19 @@ class Database {
 
 		$tables = new Tables($this->dbStructure, $this->fileStructure);
 		$tables->configure();
-		$this->statements             = array_merge($this->statements, $tables->getStatements());
+		$tableStatements              = array_merge($this->statements, $tables->getStatements());
 		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $tables->getCommentedOutStatements());
 
 		$foreignKeys = new ForeignKeys($this->dbStructure, $this->fileStructure);
 		$foreignKeys->configure();
-		$this->statements             = array_merge($this->statements, $foreignKeys->getStatements());
+
+		$this->statements = array_merge(
+			$foreignKeys->getDropStatements(),
+			$tableStatements,
+			$foreignKeys->getAddStatements()
+		);
+
+		//$this->statements             = array_merge($this->statements, $foreignKeys->getStatements());
 		$this->commentedOutStatements = array_merge($this->commentedOutStatements, $foreignKeys->getCommentedOutStatements());
 
 		$this->handleForeignKeys();
@@ -88,9 +95,16 @@ class Database {
 		$afterStatements = [];
 
 		foreach ($foreignKeysToDrop as $foreignKeyName => $foreignKeySettings) {
-			$key               = new Key($foreignKeyName, $foreignKeySettings);
-			$preStatements[]   = "ALTER TABLE `{$foreignKeySettings["originTable"]}` ".$key->dropForeignKey();
-			$afterStatements[] = "ALTER TABLE `{$foreignKeySettings["originTable"]}` ADD ".$key->foreignKeyDefinition();
+			// when foreign key was not changed before through explicit foreign key checks
+			if (empty(PhpMySqlGit::$changedObjects["databases"][$this->database]["foreignKeys"][$foreignKeySettings["originTable"]][$foreignKeyName])) {
+				$key               = new Key($foreignKeyName, $foreignKeySettings);
+				$preStatements[]   = "ALTER TABLE `{$foreignKeySettings["originTable"]}` ".$key->dropForeignKey();
+
+				// foreign key exists in structure, so key can be added at end again
+				if (!empty($this->fileStructure["databases"][$this->database]["tables"][$foreignKeySettings["originTable"]]["§§foreignKeys"][$foreignKeyName])) {
+					$afterStatements[] = "ALTER TABLE `{$foreignKeySettings["originTable"]}` ADD ".$key->foreignKeyDefinition();
+				}
+			}
 		}
 
 		$this->statements = array_merge($preStatements, $this->statements, $afterStatements);
