@@ -80,6 +80,11 @@ class Tables {
 		$dbSetting   = &$this->dbStructure["databases"][$this->database]['tables'][$this->currentTable][$setting];
 		$fileSetting = &$this->fileStructure["databases"][$this->database]['tables'][$this->currentTable][$setting];
 
+        if ($setting === "comment") {
+            $fileSetting = str_replace("\r\n", "\n", $fileSetting);
+            $dbSetting   = str_replace("\r\n", "\n", $dbSetting);
+        }
+
 		if ($ignoreCase) {
 			$dbSetting   = strtolower($dbSetting);
 			$fileSetting = strtolower($fileSetting);
