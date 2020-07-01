@@ -14,7 +14,7 @@ class Key {
 
 		$sql =  ($withConstraint ? "CONSTRAINT `".$this->name."` " : "").$type."KEY";
 
-		if ($type != "PRIMARY") {
+		if ($type != "PRIMARY ") {
 			$sql .= " `".$this->name."`";
 		}
 
