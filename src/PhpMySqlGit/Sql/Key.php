@@ -36,7 +36,7 @@ class Key {
 
 		$sql = "DROP ".$type."KEY";
 
-		if ($type != "PRIMARY") {
+		if ($type != "PRIMARY ") {
 			$sql .= " `".$this->name."`";
 		}
 
