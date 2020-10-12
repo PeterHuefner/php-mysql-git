@@ -179,7 +179,10 @@ class Columns {
 			// skipping the check of length. We already check column_type which contains a more reliable length statement for comparing purposes
 			if ($settingName === "length") {
 				continue;
-			}
+			} elseif ($settingName === "comment") {
+                $fileColSettings[$settingName] = str_replace("\r\n", "\n", $fileColSettings[$settingName]);
+                $settingValue                  = str_replace("\r\n", "\n", $settingValue);
+            }
 
 			if ($settingValue !== $fileColSettings[$settingName]) {
 				$columnCorrect = false;
