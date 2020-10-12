@@ -1,14 +1,6 @@
 # php-mysql-git
 Stores SQL structure in PHP arrays that can be added to git, allowing you to configure the MySQL DB according to the stored structure.
 
-# searching for beta testers
-
-php-mysql-git is currently in beta status.
-If you want to support beta testing install and use the tool in a dev environement and report any bugs with the issue tracker.
-While in beta you have to install the tool via
-
-    composer require peterhufner/php-mysql-git "<1.0-beta"
-
 ## How it works
 1. Your current MySQL/mariaDB Database (Tables, Columns and Data you choose) is stored in arrays in PHP-Files in a directory.
 2. These files can be put under version control and checked out on another machine.
@@ -18,7 +10,7 @@ Unlike migrations php-mysql-git is doing a real comparison of database and store
 
 ## Installation
 
-via composer **(but currently not possible due to beta phase)**
+via composer
     
     composer require peterhufner/php-mysql-git
     
