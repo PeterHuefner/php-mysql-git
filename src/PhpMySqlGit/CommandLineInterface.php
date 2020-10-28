@@ -44,12 +44,15 @@ class CommandLineInterface {
 				if (!empty($this->dataDir)) {
 					$functionArguments[$executionFunctions[$function]] = $this->dataDir;
 				}
-				$response = call_user_func_array([$this->phpMySqlGit, $function], $functionArguments);
+				if (method_exists($this->phpMySqlGit, $function)) {
+					$response = call_user_func_array([$this->phpMySqlGit, $function], $functionArguments);
 
-				// output the data
-				if (stripos($function, "configure") === 0) {
-					echo implode("\n\n", $response)."\n";
+					// output the data
+					if (stripos($function, "configure") === 0) {
+						echo implode("\n\n", $response) . "\n";
+					}
 				}
+
 			}
 		}
 	}
