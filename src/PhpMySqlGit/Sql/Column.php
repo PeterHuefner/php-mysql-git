@@ -63,7 +63,11 @@ class Column {
 		}
 
 		if ($this->definition["default"] !== null) {
-			$sql .= " DEFAULT ".$this->defaultValue();
+            $default = $this->defaultValue();
+            if ($default === '') {
+                $default = '""';
+            }
+			$sql .= " DEFAULT ".$default;
 		}
 
 		if ($this->definition["auto_increment"]) {

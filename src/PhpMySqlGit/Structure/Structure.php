@@ -55,7 +55,7 @@ class Structure {
 		}
 	}
 
-	protected function path($base, $parts = []) {
+	public function path($base, $parts = []) {
 		$path = $base;
 
 		if ($path) {
