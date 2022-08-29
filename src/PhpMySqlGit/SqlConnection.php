@@ -103,11 +103,11 @@ class SqlConnection {
 		return $status;
 	}
 
-	protected function useDatabase() {
+	public function useDatabase() {
 		$this->pdo->query("USE `$this->database`;");
 	}
 
-	protected function query($sql, $params = []) {
+	public function query($sql, $params = []) {
 		$statement = $this->pdo->prepare($sql);
 
 		foreach ($params as $paramName => $paramSettings) {

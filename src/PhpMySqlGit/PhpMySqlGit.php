@@ -2,6 +2,7 @@
 
 namespace PhpMySqlGit;
 
+use PhpMySqlGit\Core\Common;
 use PhpMySqlGit\Core\Exception;
 
 class PhpMySqlGit {
@@ -636,6 +637,43 @@ class PhpMySqlGit {
 
 		return $data;
 	}
+
+    /**
+     * Saves Data from a SQL-Statement.
+     * This is useful when you don't want to save full data of a table, but a part of filtered by SQL.
+     *
+     * @param $sql
+     * @param $tableName
+     * @param $saveToDir
+     * @param $fileName
+     * @return void
+     * @throws Exception
+     */
+    public function saveDataFromSQL($sql, $tableName, $saveToDir = null, $fileName = null) {
+        $this->database->setNames();
+        $this->database->useDatabase();
+
+        $data = [];
+
+        if (empty($fileName)) {
+            $fileName = $tableName;
+        }
+
+        if (stripos($fileName, '.php') === false) {
+            $fileName .= '.php';
+        }
+
+        if ($statement = $this->database->query($sql)) {
+            $data = [
+                $tableName => $statement->fetchAll(\PDO::FETCH_ASSOC),
+            ];
+        }
+
+        if ($saveToDir) {
+            $structure = new Structure\Structure($saveToDir);
+            Common::saveArrayToFile($data, $structure->path($saveToDir, [$this->dbname, "data", $fileName]));
+        }
+    }
 
 	public function escape($string) {
 		return $this->database->escape($string);
