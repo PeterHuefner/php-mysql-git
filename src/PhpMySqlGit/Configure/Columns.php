@@ -260,7 +260,7 @@ class Columns {
 			foreach ($fileKey["columns"] as $colIndex => $column) {
 				if ($column["name"] !== $dbKey["columns"][$colIndex]["name"]) {
 					return "diff-column-order";
-                } else if (($column["sub_part"] ?? null) !== $dbKey["columns"][$colIndex]["sub_part"]) {
+                } else if (intval($column["sub_part"] ?? null) !== intval($dbKey["columns"][$colIndex]["sub_part"])) {
                     return "diff-index-length";
                 }
 			}
