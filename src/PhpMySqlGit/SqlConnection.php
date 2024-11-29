@@ -246,21 +246,21 @@ class SqlConnection {
 		$definitionString = $this->getColumnDefinition($columnDefinition["COLUMN_NAME"]);
 		$default = $columnDefinition['COLUMN_DEFAULT'];
 
-		if (preg_match("/^'.*'$/", $default) !== 1) {
+		if (preg_match("/^'.*'$/", (string) $default) !== 1) {
 			// replace any disturbing COMMENT Clause - it is not needed for our purpose
-			$definitionString = preg_replace("/COMMENT '((?:''|[^'])*)'/", "", $definitionString);
+			$definitionString = preg_replace("/COMMENT '((?:''|[^'])*)'/", "", (string) $definitionString);
 			// replace the separating comma at the end
-			$definitionString = preg_replace('/,$/', "", $definitionString);
+			$definitionString = preg_replace('/,$/', "", (string) $definitionString);
 
 			$matches = [];
 			// DEFAULT 'VALUE'
 			if (preg_match("/DEFAULT '((?:''|[^'])*)'/", $definitionString, $matches) === 1) {
-				$default = preg_replace('/^DEFAULT\s/', "", $matches[0]);
-				$default = str_replace("\n", '\n', $default);
+				$default = preg_replace('/^DEFAULT\s/', "", (string) $matches[0]);
+				$default = str_replace("\n", '\n', (string) $default);
 
 				// Some MySQL and MariaDB Versions are wrapping numbers in quotes - we unify that and remove any edging quotes, when column is not a numeric type
 				if (in_array(strtoupper($columnDefinition["DATA_TYPE"]), ["INTEGER", "INT", "SMALLINT", "TINYINT", "MEDIUMINT", "BIGINT", "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE"])) {
-                    $numericTest = preg_replace("/(^'|'$)/", "", $default);
+                    $numericTest = preg_replace("/(^'|'$)/", "", (string) $default);
                     if (is_numeric($numericTest)) {
                         $default = $numericTest;
                     }
