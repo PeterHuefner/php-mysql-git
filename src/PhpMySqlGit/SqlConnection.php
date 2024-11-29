@@ -271,7 +271,7 @@ class SqlConnection {
 				$default = $matches[1];
 
 			// no default value
-			} elseif (strtolower($default) === "null" || $default === null) {
+			} elseif (strtolower((string) $default) === "null" || (string) $default === null) {
 				$default = null;
 			} else {
 				throw new Exception("Problem in determining default value for {$table}.{$columnDefinition["COLUMN_NAME"]}. Please report this error in github repo. Aborting Process.");
@@ -291,7 +291,7 @@ class SqlConnection {
 		}
 
 		// do not mix the current timestamp values
-		if (strtolower($default) === "current_timestamp()") {
+		if (strtolower((string) $default) === "current_timestamp()") {
 			$default = "CURRENT_TIMESTAMP";
 		}
 
@@ -312,11 +312,11 @@ class SqlConnection {
 	protected function getColumnDefinition($columnName) {
 		$definition = null;
 
-		foreach (preg_split('/\n/', $this->showCreateTable) as $line) {
+		foreach (preg_split('/\n/', (string) $this->showCreateTable) as $line) {
 			$matches = [];
             $regex = '/`'.preg_quote($columnName).'`/i';
-			if (preg_match($regex, $line, $matches) === 1) {
-				$definition = trim($line);
+			if (preg_match($regex, (string) $line, $matches) === 1) {
+				$definition = trim((string) $line);
 				break;
 			}
 		}
