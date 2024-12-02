@@ -271,7 +271,7 @@ class SqlConnection {
 				$default = $matches[1];
 
 			// no default value
-			} elseif (strtolower((string) $default) === "null" || (string) $default === null) {
+			} elseif (strtolower((string) $default) === "null" || $default === null) {
 				$default = null;
 			} else {
 				throw new Exception("Problem in determining default value for {$table}.{$columnDefinition["COLUMN_NAME"]}. Please report this error in github repo. Aborting Process.");
