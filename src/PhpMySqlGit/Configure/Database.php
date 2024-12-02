@@ -53,7 +53,7 @@ class Database {
 					continue;
 				} elseif (isset($this->fileStructure["databases"])
 					&& array_key_exists($config, $this->fileStructure["databases"][$this->database])
-					&& strtolower($value) !== strtolower($this->fileStructure["databases"][$this->database][$config])
+					&& strtolower((string) $value) !== strtolower((string) $this->fileStructure["databases"][$this->database][$config])
 				) {
 					$this->statements[]                                                    = $this->getDb($this->fileStructure["databases"][$this->database])->alter();
 					PhpMySqlGit::$changedObjects["databases"][$this->database]["database"] = true;
@@ -139,7 +139,7 @@ class Database {
 	public function getStatements(): array {
 
 		foreach ($this->statements as &$statement) {
-			$statement = trim($statement);
+			$statement = trim((string) $statement);
 			if (preg_match('/;$/', $statement) !== 1) {
 				$statement .= ";";
 			}
